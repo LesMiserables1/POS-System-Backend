@@ -5,7 +5,9 @@ import crypto from "crypto";
 import verifyToken from './verifyToken.js';
 import jwt from 'jsonwebtoken';
 import config from './config.js';
-import {Op} from "sequelize";
+import pkg from 'sequelize';
+
+const {Op} = pkg;
 const app = express();
 
 app.use(express.json());
@@ -93,7 +95,6 @@ app.post('/search/product',verify.verify,async(req,res)=>{
 app.post('/retrieve/product',verify.verify,async(req,res)=>{
     let body = req.body
 
-
     let product = await models.product.findOne({
         where : {SKU: body.SKU }
     })
@@ -119,6 +120,10 @@ app.post('/update/product',verify.verify,async(req,res)=>{
     if(body.stock){
         product.stock = body.stock
     }
+    await product.save()
+    return res.send({
+        "status" : "ok"
+    })
 })
 
 app.post('/delete/product',verify.verify,async(req,res)=>{
@@ -138,9 +143,10 @@ app.post('/order/product',verify.verify,async(req,res)=>{
 
     let transaction = await models.transaction.create()
     let totalPrice = 0
-    body.products.forEach(async product => {
+    for (let i = 0; i < body.products.length; i++) {
+        const product = body.products[i];
         let productDetail = await models.product.findByPk(product.product_id)
-        let totalPriceQty = body.qty * productDetail.price
+        let totalPriceQty = product.qty * productDetail.price
         productDetail.stock -= body.qty
         let transactionDetail = await models.transactionDetail.create({
             ProductId : product.product_id,
@@ -149,9 +155,9 @@ app.post('/order/product',verify.verify,async(req,res)=>{
             TransactionId : transaction.id
         })
         await transactionDetail.save()
-        await totalPriceQty.save()
+        await productDetail.save()
         totalPrice += totalPriceQty
-    });
+    }
     transaction.totalPrice = totalPrice
     await transaction.save()
 
@@ -159,5 +165,13 @@ app.post('/order/product',verify.verify,async(req,res)=>{
         "status" : "ok"
     })
 })
+app.post('/transaction/detail',verify.verify,async(req,res)=>{
+    let body = req.body
+    let transaction = await models.transaction.findByPk(body.transaction_id, { include: models.transactionDetail })
 
+    return res.send({
+        "status" : "ok",
+        "data" : transaction
+    })
+})
 app.listen(3000);

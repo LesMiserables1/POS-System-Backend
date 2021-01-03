@@ -37,10 +37,7 @@ const TransactionDetail = sequelize.define('TransactionDetail',{
 // User.hasMany(Transaction);
 // Transaction.belongsToMany(User);
 
-Product.hasMany(Transaction);
-Transaction.belongsTo(Product);
-
-Transaction.hasOne(TransactionDetail);
+Transaction.hasMany(TransactionDetail);
 TransactionDetail.belongsTo(Transaction);
 
 sequelize.sync({force:false})

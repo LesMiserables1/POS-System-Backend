@@ -3,8 +3,8 @@ import config from "./config.js";
 
 const {Sequelize,DataTypes} = pkg;
 const sequelize = new Sequelize(config.db_name, config.db_username, config.db_password, {
-    host: 'localhost',
-    port : 4000,
+    host: '158.101.4.222',
+    port : 3000,
     dialect: 'mysql'
   });
 

@@ -24,11 +24,12 @@ app.post('/login',async(req,res)=>{
         where : {username : body.username,password : passwordHash}
     });
     
-    let payload = {
-        id : user.id,
-        role : user.role
-    };
+   
     if(user){
+        let payload = {
+            id : user.id,
+            role : user.role
+        };
         let token = jwt.sign(payload,config.secret_key);
         return res.send({
             "status" : "ok",

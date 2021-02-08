@@ -2,18 +2,36 @@ import express from 'express';
 import verify from './verifyToken.js';
 import models from "./models.js";
 import crypto from "crypto";
-import verifyToken from './verifyToken.js';
 import jwt from 'jsonwebtoken';
 import config from './config.js';
 import pkg from 'sequelize';
-
+import multer from 'multer';
+import path from 'path';
 const {Op} = pkg;
 const app = express();
 
+const diskStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, path.join(path.resolve(), "/photos/"));
+    },
+    filename: function (req, file, cb) {
+      cb(
+        null,
+        file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+      );
+    },
+  });
+const upload = multer({storage:diskStorage})
 app.use(express.json());
 
 app.get('/',(req,res)=>{
     return res.send("hello world");
+})
+
+app.get('/get/photo',(req,res)=>{
+    let body = req.body
+    let filePath = path.join(path.resolve(),"/photos/");
+    return res.sendFile(filePath+body.path)
 })
 
 app.post('/login',async(req,res)=>{
@@ -59,7 +77,7 @@ app.post('/register', verify.verify,async(req,res)=>{
     })
 
 })
-app.post('/create/product',verify.verify,async(req,res)=>{
+app.post('/create/product',[upload.single("photo"),verify.verify],async(req,res)=>{
     let body = req.body
 
     try {
@@ -67,7 +85,8 @@ app.post('/create/product',verify.verify,async(req,res)=>{
             "name" : body.name,
             "SKU" : body.SKU,
             "price" : body.price,
-            "stock" : body.stock
+            "stock" : body.stock,
+            "path" : req.file.filename
         })
         return res.send({
             "status" : "ok"

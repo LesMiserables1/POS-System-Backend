@@ -22,6 +22,7 @@ const Product = sequelize.define('Product',{
     "stock" : DataTypes.INTEGER,
     "SKU" : DataTypes.STRING,
     "price" : DataTypes.DOUBLE,
+    "path" : DataTypes.STRING
 })
 
 

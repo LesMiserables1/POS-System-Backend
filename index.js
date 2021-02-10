@@ -7,8 +7,12 @@ import config from './config.js';
 import pkg from 'sequelize';
 import multer from 'multer';
 import path from 'path';
+import cors from 'cors';
+import * as fs from 'fs';
+
 const {Op} = pkg;
 const app = express();
+
 
 const diskStorage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -23,6 +27,7 @@ const diskStorage = multer.diskStorage({
   });
 const upload = multer({storage:diskStorage})
 app.use(express.json());
+app.use(cors());
 
 app.get('/',(req,res)=>{
     return res.send("hello world");
@@ -58,12 +63,7 @@ app.post('/login',async(req,res)=>{
         "status" : "failed"
     })
 })
-app.post('/register', verify.verify,async(req,res)=>{
-    if(req.decode.role != 'admin'){
-        return res.send({
-            "status" : "failed",
-        })
-    }
+app.post('/register',async(req,res)=>{
     let body = req.body
     let passwordHash = crypto.createHash('sha256').update(body.password).digest('base64')
     let user = await models.user.create({
@@ -84,9 +84,11 @@ app.post('/create/product',[upload.single("photo"),verify.verify],async(req,res)
         let product = await models.product.create({
             "name" : body.name,
             "SKU" : body.SKU,
-            "price" : body.price,
+            "sellingPrice" : body.sellingPrice,
+            "capitalPrice" : body.capitalPrice,
             "stock" : body.stock,
-            "path" : req.file.filename
+            "path" : req.file.filename,
+            "unit" : body.unit
         })
         return res.send({
             "status" : "ok"
@@ -111,7 +113,14 @@ app.post('/search/product',verify.verify,async(req,res)=>{
         data : products
     })
 })
-
+app.post('/get/product',verify.verify,async(req,res)=>{
+    let body = req.body
+    let products = await models.product.findAll();
+    return res.send({
+        status : "ok",
+        data : products
+    })
+})
 app.post('/retrieve/product',verify.verify,async(req,res)=>{
     let body = req.body
 
@@ -124,7 +133,7 @@ app.post('/retrieve/product',verify.verify,async(req,res)=>{
     })
 })
 
-app.post('/update/product',verify.verify,async(req,res)=>{
+app.post('/update/product',[upload.single("photo"),verify.verify],async(req,res)=>{
     let body = req.body
 
     let product = await models.product.findByPk(body.product_id);
@@ -134,11 +143,31 @@ app.post('/update/product',verify.verify,async(req,res)=>{
     if(body.SKU){
         product.SKU = body.SKU
     }
-    if(body.price){
-        product.price = body.price
+    if(body.sellingPrice){
+        product.sellingPrice = body.sellingPrice
+    }
+    if(body.capitalPrice){
+        product.capitalPrice = body.capitalPrice
     }
     if(body.stock){
         product.stock = body.stock
+    }
+    if(body.unit){
+        product.unit = body.unit
+    }
+    if(req.file){
+        fs.unlink(pathfile + product.path,(err)=>{
+            if(err && err.code == 'ENOENT') {
+                // file doens't exist
+                console.info("File doesn't exist, won't remove it.");
+            } else if (err) {
+                // other errors, e.g. maybe we don't have enough permission
+                console.error("Error occurred while trying to remove file");
+            } else {
+                console.info(`removed`);
+            }
+        })
+        product.path = req.file.filename
     }
     await product.save()
     return res.send({
@@ -148,6 +177,19 @@ app.post('/update/product',verify.verify,async(req,res)=>{
 
 app.post('/delete/product',verify.verify,async(req,res)=>{
     let body = req.body
+    let pathfile = path.join(path.resolve(), "/photos/")
+    let product = await models.product.findByPk(body.product_id)
+    fs.unlink(pathfile + product.path,(err)=>{
+        if(err && err.code == 'ENOENT') {
+            // file doens't exist
+            console.info("File doesn't exist, won't remove it.");
+        } else if (err) {
+            // other errors, e.g. maybe we don't have enough permission
+            console.error("Error occurred while trying to remove file");
+        } else {
+            console.info(`removed`);
+        }
+    })
     await models.product.destroy({
         where : {
             id : body.product_id
@@ -166,7 +208,7 @@ app.post('/order/product',verify.verify,async(req,res)=>{
     for (let i = 0; i < body.products.length; i++) {
         const product = body.products[i];
         let productDetail = await models.product.findByPk(product.product_id)
-        let totalPriceQty = product.qty * productDetail.price
+        let totalPriceQty = product.qty * productDetail.sellingPrice
         productDetail.stock -= body.qty
         let transactionDetail = await models.transactionDetail.create({
             ProductId : product.product_id,

@@ -21,8 +21,10 @@ const Product = sequelize.define('Product',{
     "name" : DataTypes.STRING,
     "stock" : DataTypes.INTEGER,
     "SKU" : DataTypes.STRING,
-    "price" : DataTypes.DOUBLE,
-    "path" : DataTypes.STRING
+    "sellingPrice" : DataTypes.DOUBLE,
+    "capitalPrice" : DataTypes.DOUBLE,
+    "path" : DataTypes.STRING,
+    "unit" : DataTypes.STRING
 })
 
 
@@ -41,7 +43,7 @@ const TransactionDetail = sequelize.define('TransactionDetail',{
 Transaction.hasMany(TransactionDetail);
 TransactionDetail.belongsTo(Transaction);
 
-sequelize.sync({force:false})
+sequelize.sync({force:true})
 
 export default {
     user : User,

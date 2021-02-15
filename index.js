@@ -72,7 +72,7 @@ app.post('/register',async(req,res)=>{
         "name" : body.name,
         "username" : body.username,
         "password" : passwordHash,
-        "role" : "employee",
+        "role" : body.role,
     })
     return res.send({
         "status" : "ok"

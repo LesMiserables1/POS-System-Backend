@@ -34,7 +34,7 @@ app.get('/',(req,res)=>{
 })
 
 app.get('/get/photo',(req,res)=>{
-    let body = req.body
+    let body = req.query
     let filePath = path.join(path.resolve(),"/photos/");
     return res.sendFile(filePath+body.path)
 })
@@ -56,6 +56,8 @@ app.post('/login',async(req,res)=>{
         let token = jwt.sign(payload,config.secret_key);
         return res.send({
             "status" : "ok",
+            "username": user.username,
+            "role" : user.role,
             token
         });
     }

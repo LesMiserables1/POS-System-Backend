@@ -43,7 +43,7 @@ const TransactionDetail = sequelize.define('TransactionDetail',{
 Transaction.hasMany(TransactionDetail);
 TransactionDetail.belongsTo(Transaction);
 
-sequelize.sync({force:true})
+sequelize.sync({force:false})
 
 export default {
     user : User,

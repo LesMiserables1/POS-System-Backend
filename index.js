@@ -229,16 +229,28 @@ app.post('/order/product',verify.verify,async(req,res)=>{
         "status" : "ok"
     })
 })
+
 app.post('/transaction/detail',verify.verify,async(req,res)=>{
     let body = req.body
-    let transaction = await models.transaction.findByPk(body.transaction_id, { include: models.transactionDetail })
+    let transaction = await models.transaction.findByPk(body.transaction_id, 
+        { 
+            include: models.transactionDetail,
+            
+        })
 
     return res.send({
         "status" : "ok",
         "data" : transaction
     })
 })
+
+app.post('/transaction/return',verify.verify, async(req,res)){
+    let body = req.body
+}
+
+
 app.listen(3000);
+
 
 /*
 custom harga

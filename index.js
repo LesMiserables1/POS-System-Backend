@@ -158,6 +158,8 @@ app.post('/update/product',[upload.single("photo"),verify.verify],async(req,res)
         product.unit = body.unit
     }
     if(req.file){
+        let pathfile = path.join(path.resolve(), "/photos/")
+
         fs.unlink(pathfile + product.path,(err)=>{
             if(err && err.code == 'ENOENT') {
                 // file doens't exist

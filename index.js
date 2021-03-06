@@ -158,6 +158,8 @@ app.post('/update/product',[upload.single("photo"),verify.verify],async(req,res)
         product.unit = body.unit
     }
     if(req.file){
+        let pathfile = path.join(path.resolve(), "/photos/")
+
         fs.unlink(pathfile + product.path,(err)=>{
             if(err && err.code == 'ENOENT') {
                 // file doens't exist
@@ -210,15 +212,16 @@ app.post('/order/product',verify.verify,async(req,res)=>{
     for (let i = 0; i < body.products.length; i++) {
         const product = body.products[i];
         let productDetail = await models.product.findByPk(product.id)
-        let totalPriceQty = product.qty * productDetail.sellingPrice
-        productDetail.stock -= body.qty
+        let totalPriceQty = product.qty * product.sellingPrice
+        productDetail.stock = product.stock - product.qty
+        console.log(productDetail.stock)
         let transactionDetail = await models.transactionDetail.create({
             ProductId : product.id,
             qty : body.qty,
             totalPriceQty : totalPriceQty,
             TransactionId : transaction.id
         })
-        await transactionDetail.save()
+        // await transactionDetail.save()
         await productDetail.save()
         totalPrice += totalPriceQty
     }
@@ -250,10 +253,3 @@ app.post('/transaction/return',verify.verify, async(req,res)){
 
 
 app.listen(3000);
-
-
-/*
-custom harga
-transaksi->sort tanggal
-
-*/

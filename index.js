@@ -138,7 +138,7 @@ app.post('/retrieve/product',verify.verify,async(req,res)=>{
 app.post('/update/product',[upload.single("photo"),verify.verify],async(req,res)=>{
     let body = req.body
 
-    let product = await models.product.findByPk(body.product_id);
+    let product = await models.product.findByPk(body.id);
     if(body.name){
         product.name = body.name
     }
@@ -180,7 +180,7 @@ app.post('/update/product',[upload.single("photo"),verify.verify],async(req,res)
 app.post('/delete/product',verify.verify,async(req,res)=>{
     let body = req.body
     let pathfile = path.join(path.resolve(), "/photos/")
-    let product = await models.product.findByPk(body.product_id)
+    let product = await models.product.findByPk(body.id)
     fs.unlink(pathfile + product.path,(err)=>{
         if(err && err.code == 'ENOENT') {
             // file doens't exist
@@ -194,7 +194,7 @@ app.post('/delete/product',verify.verify,async(req,res)=>{
     })
     await models.product.destroy({
         where : {
-            id : body.product_id
+            id : body.id
         }
     })
     return res.send({
@@ -209,11 +209,11 @@ app.post('/order/product',verify.verify,async(req,res)=>{
     let totalPrice = 0
     for (let i = 0; i < body.products.length; i++) {
         const product = body.products[i];
-        let productDetail = await models.product.findByPk(product.product_id)
+        let productDetail = await models.product.findByPk(product.id)
         let totalPriceQty = product.qty * productDetail.sellingPrice
         productDetail.stock -= body.qty
         let transactionDetail = await models.transactionDetail.create({
-            ProductId : product.product_id,
+            ProductId : product.id,
             qty : body.qty,
             totalPriceQty : totalPriceQty,
             TransactionId : transaction.id
@@ -239,3 +239,9 @@ app.post('/transaction/detail',verify.verify,async(req,res)=>{
     })
 })
 app.listen(3000);
+
+/*
+custom harga
+transaksi->sort tanggal
+
+*/

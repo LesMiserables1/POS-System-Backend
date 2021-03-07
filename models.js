@@ -35,7 +35,8 @@ const Transaction = sequelize.define('Transaction',{
 const TransactionDetail = sequelize.define('TransactionDetail',{
     "id" : {type : DataTypes.INTEGER,autoIncrement:true,primaryKey:true},
     "qty" : DataTypes.INTEGER,
-    "totalPriceQty" : DataTypes.DOUBLE 
+    "totalPriceQty" : DataTypes.DOUBLE,
+    "sellingPrice" : DataTypes.INTEGER 
 })
 // User.hasMany(Transaction);
 // Transaction.belongsToMany(User);

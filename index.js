@@ -213,13 +213,13 @@ app.post('/order/product',verify.verify,async(req,res)=>{
         const product = body.products[i];
         let productDetail = await models.product.findByPk(product.id)
         let totalPriceQty = product.qty * product.sellingPrice
-        productDetail.stock = product.stock - product.qty
-        console.log(productDetail.stock)
+        productDetail.stock = productDetail.stock - product.qty
         let transactionDetail = await models.transactionDetail.create({
             ProductId : product.id,
             qty : body.qty,
             totalPriceQty : totalPriceQty,
-            TransactionId : transaction.id
+            TransactionId : transaction.id,
+            sellingPrice : product.sellingPrice
         })
         // await transactionDetail.save()
         await productDetail.save()
@@ -237,19 +237,19 @@ app.post('/transaction/detail',verify.verify,async(req,res)=>{
     let body = req.body
     let transaction = await models.transaction.findByPk(body.transaction_id, 
         { 
-            include: models.transactionDetail,
-            
-        })
+            include: {all : true},
 
+        })
+        
     return res.send({
         "status" : "ok",
         "data" : transaction
     })
 })
 
-app.post('/transaction/return',verify.verify, async(req,res)){
+app.post('/transaction/return',verify.verify, async(req,res)=>{
     let body = req.body
-}
+})
 
 
 app.listen(3000);

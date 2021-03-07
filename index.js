@@ -213,13 +213,14 @@ app.post('/order/product',verify.verify,async(req,res)=>{
         const product = body.products[i];
         let productDetail = await models.product.findByPk(product.id)
         let totalPriceQty = product.qty * product.sellingPrice
+        console.log(totalPriceQty)
         productDetail.stock = productDetail.stock - product.qty
         let transactionDetail = await models.transactionDetail.create({
             ProductId : product.id,
-            qty : body.qty,
+            qty : product.qty,
             totalPriceQty : totalPriceQty,
             TransactionId : transaction.id,
-            sellingPrice : product.sellingPrice
+            sellingPrice : product.sellingPrice,
         })
         // await transactionDetail.save()
         await productDetail.save()
@@ -232,15 +233,41 @@ app.post('/order/product',verify.verify,async(req,res)=>{
         "status" : "ok"
     })
 })
+app.post('/get/transaction/detail',verify.verify,async(req,res)=>{
+    let body = req.body
+    try {
+        let transaction = await models.transaction.findAll({
+            include : [
+                {
+                    model : models.transactionDetail,
+                    include: models.product
+                }
+            ]
+        })
+    } catch (error) {
+        return res.send({
+            "status" : "failed"
+        })
+    }
+    return res.send({
+        "status" : "ok",
+        "data" : transaction
+    })
+})
 
 app.post('/transaction/detail',verify.verify,async(req,res)=>{
     let body = req.body
-    let transaction = await models.transaction.findByPk(body.transaction_id, 
-        { 
-            include: {all : true},
-
+    try {
+        let transaction = await models.transaction.findByPk(body.transaction_id, 
+            { 
+                include: {all : true},
+    
+            })
+    } catch (error) {
+        return res.send({
+            "status" : "failed"
         })
-        
+    }
     return res.send({
         "status" : "ok",
         "data" : transaction
@@ -249,7 +276,22 @@ app.post('/transaction/detail',verify.verify,async(req,res)=>{
 
 app.post('/transaction/return',verify.verify, async(req,res)=>{
     let body = req.body
-})
+    for(let i = 0; i < body.transactionDetail.length; ++i){
+        let td = body.transactionDetail[i]
+        
+        let tdd = await models.transactionDetail.findByPk(td)
+        let product = await models.product.findByPk(tdd.ProductId)
+        let tr = await models.transaction.findByPk(tdd.TransactionId)
+        product.stock += tdd.qty
+        tr.totalPrice -= tdd.totalPriceQty
 
+        product.save()
+        tr.save()
+        tdd.destroy()
+    }
+    return res.send({
+        "status" : "ok"
+    })
+})
 
 app.listen(3000);

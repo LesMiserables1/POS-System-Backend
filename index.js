@@ -10,7 +10,7 @@ import path from 'path';
 import cors from 'cors';
 import * as fs from 'fs';
 
-const {Op} = pkg;
+const {Op,Sequelize} = pkg;
 const app = express();
 
 
@@ -244,15 +244,16 @@ app.post('/get/transaction/detail',verify.verify,async(req,res)=>{
                 }
             ]
         })
+        return res.send({
+            "status" : "ok",
+            "data" : transaction
+        })
     } catch (error) {
         return res.send({
             "status" : "failed"
         })
     }
-    return res.send({
-        "status" : "ok",
-        "data" : transaction
-    })
+
 })
 
 app.post('/transaction/detail',verify.verify,async(req,res)=>{
@@ -288,7 +289,24 @@ app.post('/transaction/return',verify.verify, async(req,res)=>{
         product.save()
         tr.save()
         tdd.destroy()
+
     }
+    // await models.transaction.destroy({
+    //     where : {
+    //         attribute : ['Transaction.id',[Sequelize.fn('COUNT'),Sequelize.col('TransactionDetail.id'),'transactionCount']],
+    //         transactionCount : {
+    //             [Op.eq] : 0
+    //         }
+    //     }
+    // })
+    await models.transaction.destroy({
+        where : {
+            totalPrice : {
+                [Op.eq] : 0
+            }
+        }
+    })
+
     return res.send({
         "status" : "ok"
     })

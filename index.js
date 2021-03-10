@@ -212,12 +212,11 @@ app.post('/order/product',verify.verify,async(req,res)=>{
     for (let i = 0; i < body.products.length; i++) {
         const product = body.products[i];
         let productDetail = await models.product.findByPk(product.id)
-        let totalPriceQty = product.qty * product.sellingPrice
-        console.log(totalPriceQty)
-        productDetail.stock = productDetail.stock - product.qty
+        let totalPriceQty = product.quantity * product.sellingPrice
+        productDetail.stock = productDetail.stock - product.quantity
         let transactionDetail = await models.transactionDetail.create({
             ProductId : product.id,
-            qty : product.qty,
+            qty : product.quantity,
             totalPriceQty : totalPriceQty,
             TransactionId : transaction.id,
             sellingPrice : product.sellingPrice,
@@ -244,15 +243,16 @@ app.post('/get/transaction/detail',verify.verify,async(req,res)=>{
                 }
             ]
         })
+        return res.send({
+            "status" : "ok",
+            "data" : transaction
+        })
     } catch (error) {
         return res.send({
             "status" : "failed"
         })
     }
-    return res.send({
-        "status" : "ok",
-        "data" : transaction
-    })
+
 })
 
 app.post('/transaction/detail',verify.verify,async(req,res)=>{

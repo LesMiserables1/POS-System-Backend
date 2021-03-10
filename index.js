@@ -10,7 +10,7 @@ import path from 'path';
 import cors from 'cors';
 import * as fs from 'fs';
 
-const {Op} = pkg;
+const {Op,Sequelize} = pkg;
 const app = express();
 
 
@@ -288,7 +288,24 @@ app.post('/transaction/return',verify.verify, async(req,res)=>{
         product.save()
         tr.save()
         tdd.destroy()
+
     }
+    // await models.transaction.destroy({
+    //     where : {
+    //         attribute : ['Transaction.id',[Sequelize.fn('COUNT'),Sequelize.col('TransactionDetail.id'),'transactionCount']],
+    //         transactionCount : {
+    //             [Op.eq] : 0
+    //         }
+    //     }
+    // })
+    await models.transaction.destroy({
+        where : {
+            totalPrice : {
+                [Op.eq] : 0
+            }
+        }
+    })
+
     return res.send({
         "status" : "ok"
     })

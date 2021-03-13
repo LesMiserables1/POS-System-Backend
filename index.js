@@ -350,11 +350,11 @@ app.post('/transaction/return',verify.verify, async(req,res)=>{
         tdd.totalPriceQty -= totalPriceReturn
         tr.totalPrice -= totalPriceReturn
 
-        product.save()
-        tr.save()
+        await product.save()
+        await tr.save()
         if(tdd.totalPriceQty == 0)
-            tdd.destroy()
-        else tdd.save()
+            await tdd.destroy()
+        else await tdd.save()
     }
     // await models.transaction.destroy({
     //     where : {
@@ -379,7 +379,42 @@ app.post('/transaction/return',verify.verify, async(req,res)=>{
 
 app.post("/analytic",verify.verify,async(req,res)=>{
 
-})
+    let body = req.body
+    try {
+        let transaction = await models.transaction.findAll({
+            where:{
+                createdAt : {
+                    [Op.gte] : body.from_date,
+                    [Op.lte] : body.to_date
+                }
+            },include: models.transactionDetail
+        })
+        let data = []
+        
+        for(let i = 0; i < transaction.length; ++i){
+            let tdd = transaction[i].TransactionDetails
+            let jumlahHargaModal = 0
+            for(let j = 0; j < tdd.length; ++j){
+                let product = await models.product.findByPk(tdd[j].ProductId)
+                jumlahHargaModal += tdd[j].qty*product.capitalPrice
+            }
+            data.push({
+                "date" : transaction[i].createdAt,
+                "penjualan" : transaction[i].totalPrice,
+                "modal" : jumlahHargaModal
+            })    
+        }
+        return res.send({
+            status : "ok",
+            data
+        })
+    } catch (error) {
+        return res.send({
+            status : "failed"
+        })
+    }
+    
+0})
 app.listen(3000);
 
 /**

@@ -1,0 +1,20 @@
+<html>
+
+<script src="test.js">
+</script>
+<script>
+    qz.websocket.connect().then(() => {
+        return qz.printers.find("EPSON LX-310");
+    }).then((found) => {
+        var config = qz.configs.create("EPSON LX-310");
+        var data = [{
+            type: 'pixel',
+            format: 'html',
+            flavor: 'file', // or 'plain' if the data is raw HTML
+            data: 'html_sample.html'
+        }];
+        qz.print(config, data).catch(function (e) { console.error(e); });
+    });
+</script>
+
+</html>

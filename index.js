@@ -285,9 +285,9 @@ app.post('/transaction/return',verify.verify, async(req,res)=>{
         product.stock += tdd.qty
         tr.totalPrice -= tdd.totalPriceQty
 
-        product.save()
-        tr.save()
-        tdd.destroy()
+        await product.save()
+        await tr.save()
+        await tdd.destroy()
 
     }
     // await models.transaction.destroy({

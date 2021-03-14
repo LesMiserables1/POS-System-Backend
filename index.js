@@ -257,12 +257,12 @@ app.post('/order/product',verify.verify,async(req,res)=>{
         for (let i = 0; i < body.products.length; i++) {
             const product = body.products[i];
             let productDetail = await models.product.findByPk(product.id)
-            let totalPriceQty = product.qty * product.sellingPrice
+            let totalPriceQty = product.quantity * product.sellingPrice
             console.log(totalPriceQty)
-            productDetail.stock = productDetail.stock - product.qty
+            productDetail.stock = productDetail.stock - product.quantity
             let transactionDetail = await models.transactionDetail.create({
                 ProductId : product.id,
-                qty : product.qty,
+                qty : product.quantity,
                 totalPriceQty : totalPriceQty,
                 TransactionId : transaction.id,
                 sellingPrice : product.sellingPrice,
@@ -349,6 +349,7 @@ app.post('/transaction/return',verify.verify, async(req,res)=>{
         let totalPriceReturn = tdd.sellingPrice * td.qtyReturn
         tdd.totalPriceQty -= totalPriceReturn
         tr.totalPrice -= totalPriceReturn
+        tdd.qty -= td.qtyReturn
 
         await product.save()
         await tr.save()

@@ -60,6 +60,12 @@ app.post('/login',async(req,res)=>{
             id : user.id,
             role : user.role
         };
+        
+        let loginLog = await models.loginLog.create({
+            "userId" : user.id,
+            initialMoney : body.initialMoney
+        })
+
         let token = jwt.sign(payload,config.secret_key);
         return res.send({
             "status" : "ok",
@@ -71,6 +77,27 @@ app.post('/login',async(req,res)=>{
     return res.send({
         "status" : "failed"
     })
+})
+app.post('/logout',verify.verify,async(req,res)=>{
+    let body = req.body
+    try {
+        let loginLog = await models.loginLog.findOne({
+            where : {
+                userId : req.decode.id,
+                status : "IN"
+            }
+        })
+        loginLog.status = "OUT"
+        loginLog.finalMoney = body.finalMoney
+        return res.send({
+            "status" : "ok"
+        }) 
+    } catch (error) {
+        return res.send({
+            "status" : "failed",
+            "error" : error
+        })
+    }
 })
 app.post('/register',async(req,res)=>{
     let body = req.body
@@ -91,6 +118,62 @@ app.post('/register',async(req,res)=>{
         })        
     }
 
+});
+
+/**
+ 
+{
+
+    supplierId : 
+    supplierName:
+    products : [
+        {
+            id : 1,
+            stock : 12
+        },
+        {
+            id : null,
+            name:
+            SKU: 
+            sellingPrice:
+            path:
+            unit:
+        }
+    ]
+}
+ */
+
+app.post('/create/purchased/log',[upload.single("photo"),verify.verify],async(req,res)=>{
+    let body = req.body
+
+    try {
+        if(body.supplierId == -1){
+            const supplier = await models.supplier.create({
+                name : body.supplierName
+            })
+            body.supplierId = supplier.id
+        }
+
+        for(let i = 0; i < body.products.length; ++i){
+            const product = body.products[i]
+            if(product.id == -1){
+                const product = await models.product.create({
+                    "name" : product.name,
+                    "SKU" : product.SKU,
+                    "sellingPrice" : product.sellingPrice,
+                    "unit" : product.unit,
+                    "path" : req.file.filename
+                })
+                const productDetail = await models.productDetail.create({
+
+                }) 
+            }
+
+        }
+
+    } catch (error) {
+        
+    }
 })
 app.post('/create/product',[upload.single("photo"),verify.verify],async(req,res)=>{
     let body = req.body
@@ -100,7 +183,6 @@ app.post('/create/product',[upload.single("photo"),verify.verify],async(req,res)
             "name" : body.name,
             "SKU" : body.SKU,
             "sellingPrice" : body.sellingPrice,
-            "capitalPrice" : body.capitalPrice,
             "stock" : body.stock,
             "path" : req.file.filename,
             "unit" : body.unit
@@ -110,7 +192,8 @@ app.post('/create/product',[upload.single("photo"),verify.verify],async(req,res)
         })
     } catch (error) {
         return res.send({
-            "status" : "failed"
+            "status" : "failed",
+            error
         })
     }    
 })
@@ -131,7 +214,8 @@ app.post('/search/product',verify.verify,async(req,res)=>{
         })   
     } catch (error) {
         return res.send({
-            status : "failed"
+            status : "failed",
+            error
         })
     }
 })
@@ -145,10 +229,10 @@ app.post('/get/product',verify.verify,async(req,res)=>{
         })        
     } catch (error) {
         return res.send({
-            status : "failed"
+            status : "failed",
+            error
         })
     }
-
 })
 app.post('/retrieve/product',verify.verify,async(req,res)=>{
     let body = req.body
@@ -163,7 +247,8 @@ app.post('/retrieve/product',verify.verify,async(req,res)=>{
         })        
     } catch (error) {
         return res.send({
-            status : "failed"
+            status : "failed",
+            error
         })
     }
 })
@@ -213,7 +298,8 @@ app.post('/update/product',[upload.single("photo"),verify.verify],async(req,res)
             
     } catch (error) {
         return res.send({
-            "status" : "failed"
+            "status" : "failed",
+            error
         })        
     }
 })
@@ -244,7 +330,8 @@ app.post('/delete/product',verify.verify,async(req,res)=>{
         })    
     } catch (error) {
         return res.send({
-            "status" : "failed"
+            "status" : "failed",
+            error
         })
     }
 })

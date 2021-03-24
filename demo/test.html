@@ -7,11 +7,12 @@
         return qz.printers.find("EPSON LX-310");
     }).then((found) => {
         var config = qz.configs.create("EPSON LX-310");
+        let data = ``
         var data = [{
             type: 'pixel',
             format: 'html',
             flavor: 'file', // or 'plain' if the data is raw HTML
-            data: 'html_sample.html'
+            data : `<html>fdf ${ter} </html>`
         }];
         qz.print(config, data).catch(function (e) { console.error(e); });
     });

@@ -28,7 +28,7 @@ const ProductDetail = sequelize.define("ProductDetail",{
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     "capitalPrice" : DataTypes.DOUBLE,
     "stock" : DataTypes.INTEGER,
-    "usedStock" : DataTypes.INTEGER
+    "usedStock" : {type: DataTypes.INTEGER,defaultValue:0}
 })
 
 const LoginLog = sequelize.define("LoginLog", {
@@ -54,7 +54,7 @@ const ExpeditionLog = sequelize.define("ExpeditionLog", {
 const PurchasedLog = sequelize.define("PurchasedLog", {
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     "stock": DataTypes.INTEGER,
-    "usedStock": DataTypes.INTEGER,
+    "usedStock": {type  : DataTypes.INTEGER,defaultValue:0},
 })
 const PurchasedLogDetail = sequelize.define("PurchasedLogDetail",{
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -105,8 +105,8 @@ LoginLog.belongsTo(User);
 Transaction.hasMany(TransactionDetail);
 TransactionDetail.belongsTo(Transaction);
 
-PurchasedLog.hasMany(TransactionDetail);
-TransactionDetail.belongsTo(PurchasedLog);
+ProductDetail.hasMany(TransactionDetail);
+TransactionDetail.belongsTo(ProductDetail);
 
 
 sequelize.sync({ force: false });

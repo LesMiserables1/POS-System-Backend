@@ -398,7 +398,6 @@ app.post('/order/product', verify.verify, async (req, res) => {
                     }
                 }
             })
-            console.log(product)
             let x = 0;
             while (qty > 0) {
                 const available_stock = productDetail[x].stock - productDetail[x].usedStock
@@ -407,7 +406,7 @@ app.post('/order/product', verify.verify, async (req, res) => {
                 qty -= min_qty
 
                 let transactionDetail = await models.transactionDetail.create({
-                    ProductId: product.id,
+                    ProductDetailId: productDetail[x].id,
                     qty: min_qty,
                     totalPriceQty: totalPriceQty,
                     TransactionId: transaction.id,
@@ -527,44 +526,64 @@ app.post('/transaction/return', verify.verify, async (req, res) => {
     })
 })
 
-app.post("/analytic", verify.verify, async (req, res) => {
-
+app.post("/report/spending", verify.verify, async (req, res) => {
     let body = req.body
     try {
-        let transaction = await models.transaction.findAll({
-            where: {
-                createdAt: {
-                    [Op.gte]: body.from_date,
-                    [Op.lte]: body.to_date
+        let spending = await models.spendingLog.findAll({
+            where:{
+                createdAt : {
+                    [Op.gte] : body.from_date,
+                    [Op.lte] : body.to_date
                 }
-            }, include: models.transactionDetail
-        })
-        let data = []
-
-        for (let i = 0; i < transaction.length; ++i) {
-            let tdd = transaction[i].TransactionDetails
-            let jumlahHargaModal = 0
-            for (let j = 0; j < tdd.length; ++j) {
-                let product = await models.product.findByPk(tdd[j].ProductId)
-                jumlahHargaModal += tdd[j].qty * product.capitalPrice
             }
-            data.push({
-                "date": transaction[i].createdAt,
-                "penjualan": transaction[i].totalPrice,
-                "modal": jumlahHargaModal
-            })
+        })
+        let total_sum = 0;
+        for(let i = 0; i < spending.length; ++i){
+            total_sum += spending[i].expense
         }
         return res.send({
-            status: "ok",
-            data
+            status : "ok",
+            total_keluar : total_sum
         })
     } catch (error) {
         return res.send({
-            status: "failed"
-        })
+            status : "failed",
+            msg : error
+        })        
     }
-
-    0
+})
+app.post("/report/sales", verify.verify, async (req, res) => {
+    let body = req.body
+    try {
+        let tdetails = await models.transactionDetail.findAll({
+            where:{
+                createdAt : {
+                    [Op.gte] : body.from_date,
+                    [Op.lte] : body.to_date
+                },
+            }, 
+            include : models.productDetail
+        })
+        console.log(tdetails)
+        let total_jual = 0;
+        let total_modal = 0;
+        for(let i = 0; i < tdetails.length; ++i){
+            total_modal += tdetails[i].ProductDetail.capitalPrice*tdetails[i].qty
+            total_jual += tdetails[i].totalPriceQty
+        }
+        return res.send({
+            status : "ok",
+            total_jual,
+            total_modal,
+            total_bersih : total_jual-total_modal
+        })
+    } catch (error) {
+        console.log(error)
+        return res.send({
+            status : "failed",
+            msg : error
+        })        
+    }
 })
 app.listen(3000);
 

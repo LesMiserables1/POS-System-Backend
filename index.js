@@ -10,276 +10,321 @@ import path from 'path';
 import cors from 'cors';
 import * as fs from 'fs';
 
-const {Op,Sequelize} = pkg;
+const { Op, Sequelize } = pkg;
 const app = express();
-
 
 const diskStorage = multer.diskStorage({
     destination: function (req, file, cb) {
-      cb(null, path.join(path.resolve(), "/photos/"));
+        cb(null, path.join(path.resolve(), "/photos/"));
     },
     filename: function (req, file, cb) {
-      cb(
-        null,
-        file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-      );
+        cb(
+            null,
+            file.fieldname + "-" + Date.now() + path.extname(file.originalname)
+        );
     },
-  });
-const upload = multer({storage:diskStorage})
+});
+const upload = multer({ storage: diskStorage })
 app.use(express.json());
 app.use(cors());
 
-app.get('/',(req,res)=>{
+app.get('/', (req, res) => {
     return res.send("hello world");
 })
 
-app.get('/get/photo',(req,res)=>{
-    let body = req.query
+app.get('/get/photo', (req, res) => {
+    let body = req.body
     try {
-     
-        let filePath = path.join(path.resolve(),"/photos/");
-        return res.sendFile(filePath+body.path)   
+
+        let filePath = path.join(path.resolve(), "/photos/");
+        return res.sendFile(filePath + body.path)
     } catch (error) {
         return res.send({
-            "status" : "failed",
-            "message" : "file does not exist"
+            "status": "failed",
+            "message": "file does not exist"
         })
     }
 })
 
-app.post('/login',async(req,res)=>{
+app.post('/login', async (req, res) => {
     let body = req.body;
     let passwordHash = crypto.createHash('sha256').update(body.password).digest('base64')
 
     let user = await models.user.findOne({
-        where : {username : body.username,password : passwordHash}
+        where: { username: body.username, password: passwordHash }
     });
-    
-    if(user){
+
+    if (user) {
         let payload = {
-            id : user.id,
-            role : user.role
+            id: user.id,
+            role: user.role
         };
-        
+
         let loginLog = await models.loginLog.create({
-            "userId" : user.id,
-            initialMoney : body.initialMoney
+            "userId": user.id,
+            initialMoney: body.initialMoney
         })
 
-        let token = jwt.sign(payload,config.secret_key);
+        let token = jwt.sign(payload, config.secret_key);
         return res.send({
-            "status" : "ok",
+            "status": "ok",
             "username": user.username,
-            "role" : user.role,
+            "role": user.role,
             token
         });
     }
     return res.send({
-        "status" : "failed"
+        "status": "failed"
     })
 })
-app.post('/logout',verify.verify,async(req,res)=>{
+app.post('/logout', verify.verify, async (req, res) => {
     let body = req.body
     try {
         let loginLog = await models.loginLog.findOne({
-            where : {
-                userId : req.decode.id,
-                status : "IN"
+            where: {
+                userId: req.decode.id,
+                status: "IN"
             }
         })
         loginLog.status = "OUT"
         loginLog.finalMoney = body.finalMoney
         return res.send({
-            "status" : "ok"
-        }) 
+            "status": "ok"
+        })
     } catch (error) {
         return res.send({
-            "status" : "failed",
-            "error" : error
+            "status": "failed",
+            "error": error
         })
     }
 })
-app.post('/register',async(req,res)=>{
+app.post('/register', async (req, res) => {
     let body = req.body
     let passwordHash = crypto.createHash('sha256').update(body.password).digest('base64')
     try {
         let user = await models.user.create({
-            "name" : body.name,
-            "username" : body.username,
-            "password" : passwordHash,
-            "role" : body.role,
+            "name": body.name,
+            "username": body.username,
+            "password": passwordHash,
+            "role": body.role,
         })
         return res.send({
-            "status" : "ok"
-        })   
+            "status": "ok"
+        })
     } catch (error) {
         return res.send({
-            "status" : "failed"
-        })        
+            "status": "failed"
+        })
     }
 
 });
 
-/**
- 
-{
+app.post('/create/supplier', verify.verify, async (req, res) => {
+    let body = req.body
 
-    supplierId : 
-    supplierName:
+    try {
+        await models.supplier.create({
+            name: body.name
+        })
+        return res.send({
+            status: "ok"
+        })
+    } catch (error) {
+        return res.send({
+            status: "failed",
+            msg: error
+        })
+    }
+})
+app.post('/get/products/supplier', verify.verify, async (req, res) => {
+    let body = req.body
+
+    try {
+        let data = await models.supplier.findOne({
+            where: {
+                id: body.id
+            },
+            include: models.productDetail
+        })
+        return res.send({
+            "status": "ok",
+            products: data
+        })
+    } catch (error) {
+        return res.send({
+            "status": "failed",
+            msg: error
+        })
+    }
+})
+
+/*
+
+{
+    supplierId : 1,
     products : [
         {
-            id : 1,
-            stock : 12
+            productDetailId : 1,
+            stock : 80,
+            status : "old"
         },
         {
-            id : null,
-            name:
-            SKU: 
-            sellingPrice:
-            path:
-            unit:
+            productId : 1,
+            capitalPrice,
+            stock:
+            status : "new"
         }
     ]
 }
  */
 
-app.post('/create/purchased/log',[upload.single("photo"),verify.verify],async(req,res)=>{
+app.post('/create/purchased/log', verify.verify, async (req, res) => {
     let body = req.body
 
     try {
-        if(body.supplierId == -1){
-            const supplier = await models.supplier.create({
-                name : body.supplierName
-            })
-            body.supplierId = supplier.id
-        }
+        let supplierId = body.supplierId;
+        let products = body.products;
 
-        for(let i = 0; i < body.products.length; ++i){
-            const product = body.products[i]
-            if(product.id == -1){
-                const product = await models.product.create({
-                    "name" : product.name,
-                    "SKU" : product.SKU,
-                    "sellingPrice" : product.sellingPrice,
-                    "unit" : product.unit,
-                    "path" : req.file.filename
+        for (let i = 0; i < products.length; ++i) {
+            let product = products[i];
+            if (product.status === 'new') {
+                await models.productDetail.create({
+                    SupplierId: supplierId,
+                    ProductId: product.productId,
+                    capitalPrice: product.capitalPrice,
+                    stock: product.stock,
                 })
-                const productDetail = await models.productDetail.create({
-
-                }) 
+            } else {
+                let productDetail = await models.productDetail.findOne({
+                    where: { id: product.productDetailId }
+                })
+                productDetail.stock += product.stock
+                await productDetail.save()
             }
-
         }
-
+        return res.send({
+            status: "ok"
+        })
     } catch (error) {
-        
+        console.log(error)
+        return res.send({
+            status: "failed",
+            msg: error
+        })
     }
 })
-app.post('/create/product',[upload.single("photo"),verify.verify],async(req,res)=>{
+app.post('/create/product', [upload.single("photo"), verify.verify], async (req, res) => {
     let body = req.body
 
+    let path;
+    if (!req.file) {
+        path = 'default.jpg'
+    } else {
+        path = req.file.filename
+    }
     try {
         let product = await models.product.create({
-            "name" : body.name,
-            "SKU" : body.SKU,
-            "sellingPrice" : body.sellingPrice,
-            "stock" : body.stock,
-            "path" : req.file.filename,
-            "unit" : body.unit
+            "name": body.name,
+            "SKU": body.SKU,
+            "sellingPrice": body.sellingPrice,
+            "stock": body.stock,
+            "path": path,
+            "unit": body.unit
         })
         return res.send({
-            "status" : "ok"
+            "status": "ok"
         })
     } catch (error) {
+        console.log(error)
         return res.send({
-            "status" : "failed",
+            "status": "failed",
             error
         })
-    }    
+    }
 })
-app.post('/search/product',verify.verify,async(req,res)=>{
+app.post('/search/product', verify.verify, async (req, res) => {
     let body = req.body
     try {
-     
+
         let products = await models.product.findAll({
-            where : {
-                "name" : {
-                    [Op.like] : `%${body.product_name}%` 
+            where: {
+                "name": {
+                    [Op.like]: `%${body.product_name}%`
                 }
             }
         })
         return res.send({
-            status : "ok",
-            data : products
-        })   
+            status: "ok",
+            data: products
+        })
     } catch (error) {
         return res.send({
-            status : "failed",
+            status: "failed",
             error
         })
     }
 })
-app.post('/get/product',verify.verify,async(req,res)=>{
+app.post('/get/product', verify.verify, async (req, res) => {
     let body = req.body
     try {
         let products = await models.product.findAll();
         return res.send({
-            status : "ok",
-            data : products
-        })        
+            status: "ok",
+            data: products
+        })
     } catch (error) {
         return res.send({
-            status : "failed",
+            status: "failed",
             error
         })
     }
 })
-app.post('/retrieve/product',verify.verify,async(req,res)=>{
+app.post('/retrieve/product', verify.verify, async (req, res) => {
     let body = req.body
-    
+
     try {
         let product = await models.product.findOne({
-            where : {SKU: body.SKU }
+            where: { SKU: body.SKU }
         })
         return res.send({
-            "status" : "ok",
-            "data" : product
-        })        
+            "status": "ok",
+            "data": product
+        })
     } catch (error) {
         return res.send({
-            status : "failed",
+            status: "failed",
             error
         })
     }
 })
 
-app.post('/update/product',[upload.single("photo"),verify.verify],async(req,res)=>{
+app.post('/update/product', [upload.single("photo"), verify.verify], async (req, res) => {
     let body = req.body
     try {
         let product = await models.product.findByPk(body.id);
-        if(body.name){
+        if (body.name) {
             product.name = body.name
         }
-        if(body.SKU){
+        if (body.SKU) {
             product.SKU = body.SKU
         }
-        if(body.sellingPrice){
+        if (body.sellingPrice) {
             product.sellingPrice = body.sellingPrice
         }
-        if(body.capitalPrice){
+        if (body.capitalPrice) {
             product.capitalPrice = body.capitalPrice
         }
-        if(body.stock){
+        if (body.stock) {
             product.stock = body.stock
         }
-        if(body.unit){
+        if (body.unit) {
             product.unit = body.unit
         }
-        if(req.file){
+        if (req.file) {
             let pathfile = path.join(path.resolve(), "/photos/")
-    
-            fs.unlink(pathfile + product.path,(err)=>{
-                if(err && err.code == 'ENOENT') {
+
+            fs.unlink(pathfile + product.path, (err) => {
+                if (err && err.code == 'ENOENT') {
                     // file doens't exist
                     console.info("File doesn't exist, won't remove it.");
                 } else if (err) {
@@ -293,24 +338,24 @@ app.post('/update/product',[upload.single("photo"),verify.verify],async(req,res)
         }
         await product.save()
         return res.send({
-            "status" : "ok"
+            "status": "ok"
         })
-            
+
     } catch (error) {
         return res.send({
-            "status" : "failed",
+            "status": "failed",
             error
-        })        
+        })
     }
 })
 
-app.post('/delete/product',verify.verify,async(req,res)=>{
+app.post('/delete/product', verify.verify, async (req, res) => {
     let body = req.body
     let pathfile = path.join(path.resolve(), "/photos/")
     try {
         let product = await models.product.findByPk(body.id)
-        fs.unlink(pathfile + product.path,(err)=>{
-            if(err && err.code == 'ENOENT') {
+        fs.unlink(pathfile + product.path, (err) => {
+            if (err && err.code == 'ENOENT') {
                 // file doens't exist
                 console.info("File doesn't exist, won't remove it.");
             } else if (err) {
@@ -321,94 +366,111 @@ app.post('/delete/product',verify.verify,async(req,res)=>{
             }
         })
         await models.product.destroy({
-            where : {
-                id : body.id
+            where: {
+                id: body.id
             }
         })
         return res.send({
-            "status" : "ok"
-        })    
+            "status": "ok"
+        })
     } catch (error) {
         return res.send({
-            "status" : "failed",
+            "status": "failed",
             error
         })
     }
 })
 
-app.post('/order/product',verify.verify,async(req,res)=>{
+app.post('/order/product', verify.verify, async (req, res) => {
     let body = req.body
     try {
         let transaction = await models.transaction.create()
-        let totalPrice = 0
-        for (let i = 0; i < body.products.length; i++) {
-            const product = body.products[i];
-            let productDetail = await models.product.findByPk(product.id)
-            let totalPriceQty = product.quantity * product.sellingPrice
-            console.log(totalPriceQty)
-            productDetail.stock = productDetail.stock - product.quantity
-            let transactionDetail = await models.transactionDetail.create({
-                ProductId : product.id,
-                qty : product.quantity,
-                totalPriceQty : totalPriceQty,
-                TransactionId : transaction.id,
-                sellingPrice : product.sellingPrice,
+        let totalPrice = 0;
+        for (let i = 0; i < body.products.length; ++i) {
+            let product = body.products[i]
+            let qty = product.quantity
+            product = await models.product.findByPk(product.id)
+            let productDetail = await models.productDetail.findAll({
+                where: {
+                    ProductId: product.id,
+                    stock: {
+                        [Op.gt]: Sequelize.col('usedStock')
+                    }
+                }
             })
-            // await transactionDetail.save()
-            await productDetail.save()
-            totalPrice += totalPriceQty
+            console.log(product)
+            let x = 0;
+            while (qty > 0) {
+                const available_stock = productDetail[x].stock - productDetail[x].usedStock
+                const min_qty = Math.min(available_stock, qty)
+                let totalPriceQty = min_qty * product.sellingPrice
+                qty -= min_qty
+
+                let transactionDetail = await models.transactionDetail.create({
+                    ProductId: product.id,
+                    qty: min_qty,
+                    totalPriceQty: totalPriceQty,
+                    TransactionId: transaction.id,
+                    sellingPrice: product.sellingPrice,
+                })
+                productDetail[x].usedStock += min_qty;
+                await productDetail[x].save()
+                totalPrice += totalPriceQty;
+                x++;
+            }
         }
         transaction.totalPrice = totalPrice
         await transaction.save()
-    
         return res.send({
-            "status" : "ok"
-        })    
+            "status": "ok"
+        })
     } catch (error) {
+        console.log(error)
         return res.send({
-            status : "failed"
+            status: "failed"
         })
     }
-    
+
 })
-app.post('/get/transaction/detail',verify.verify,async(req,res)=>{
+
+app.post('/get/transaction/detail', verify.verify, async (req, res) => {
     let body = req.body
     try {
         let transaction = await models.transaction.findAll({
-            include : [
+            include: [
                 {
-                    model : models.transactionDetail,
+                    model: models.transactionDetail,
                     include: models.product
                 }
             ]
         })
         return res.send({
-            "status" : "ok",
-            "data" : transaction
+            "status": "ok",
+            "data": transaction
         })
     } catch (error) {
         return res.send({
-            "status" : "failed"
+            "status": "failed"
         })
     }
 
 })
 
-app.post('/transaction/detail',verify.verify,async(req,res)=>{
+app.post('/transaction/detail', verify.verify, async (req, res) => {
     let body = req.body
     try {
-        let transaction = await models.transaction.findByPk(body.transaction_id, 
-            { 
-                include: {all : true},
-    
+        let transaction = await models.transaction.findByPk(body.transaction_id,
+            {
+                include: { all: true },
+
             })
         return res.send({
-            "status" : "ok",
-            "data" : transaction
+            "status": "ok",
+            "data": transaction
         })
     } catch (error) {
         return res.send({
-            "status" : "failed"
+            "status": "failed"
         })
     }
 
@@ -423,12 +485,12 @@ app.post('/transaction/detail',verify.verify,async(req,res)=>{
  * ]
  * 
  */
-app.post('/transaction/return',verify.verify, async(req,res)=>{
+app.post('/transaction/return', verify.verify, async (req, res) => {
     let body = req.body
-    
-    for(let i = 0; i < body.transactionDetail.length; ++i){
+
+    for (let i = 0; i < body.transactionDetail.length; ++i) {
         let td = body.transactionDetail[i]
-        
+
         let tdd = await models.transactionDetail.findByPk(td.id)
         let product = await models.product.findByPk(tdd.ProductId)
         let tr = await models.transaction.findByPk(tdd.TransactionId)
@@ -440,7 +502,7 @@ app.post('/transaction/return',verify.verify, async(req,res)=>{
 
         await product.save()
         await tr.save()
-        if(tdd.totalPriceQty == 0)
+        if (tdd.totalPriceQty == 0)
             await tdd.destroy()
         else await tdd.save()
     }
@@ -453,62 +515,63 @@ app.post('/transaction/return',verify.verify, async(req,res)=>{
     //     }
     // })
     await models.transaction.destroy({
-        where : {
-            totalPrice : {
-                [Op.eq] : 0
+        where: {
+            totalPrice: {
+                [Op.eq]: 0
             }
         }
     })
 
     return res.send({
-        "status" : "ok"
+        "status": "ok"
     })
 })
 
-app.post("/analytic",verify.verify,async(req,res)=>{
+app.post("/analytic", verify.verify, async (req, res) => {
 
     let body = req.body
     try {
         let transaction = await models.transaction.findAll({
-            where:{
-                createdAt : {
-                    [Op.gte] : body.from_date,
-                    [Op.lte] : body.to_date
+            where: {
+                createdAt: {
+                    [Op.gte]: body.from_date,
+                    [Op.lte]: body.to_date
                 }
-            },include: models.transactionDetail
+            }, include: models.transactionDetail
         })
         let data = []
-        
-        for(let i = 0; i < transaction.length; ++i){
+
+        for (let i = 0; i < transaction.length; ++i) {
             let tdd = transaction[i].TransactionDetails
             let jumlahHargaModal = 0
-            for(let j = 0; j < tdd.length; ++j){
+            for (let j = 0; j < tdd.length; ++j) {
                 let product = await models.product.findByPk(tdd[j].ProductId)
-                jumlahHargaModal += tdd[j].qty*product.capitalPrice
+                jumlahHargaModal += tdd[j].qty * product.capitalPrice
             }
             data.push({
-                "date" : transaction[i].createdAt,
-                "penjualan" : transaction[i].totalPrice,
-                "modal" : jumlahHargaModal
-            })    
+                "date": transaction[i].createdAt,
+                "penjualan": transaction[i].totalPrice,
+                "modal": jumlahHargaModal
+            })
         }
         return res.send({
-            status : "ok",
+            status: "ok",
             data
         })
     } catch (error) {
         return res.send({
-            status : "failed"
+            status: "failed"
         })
     }
-    
-0})
+
+    0
+})
 app.listen(3000);
 
 /**
  * print receipt
  * startup service (backend,frontend,database)
- * 
+ *
  */
 /**
  * @patch 2
@@ -516,5 +579,5 @@ app.listen(3000);
  * distributed application (using cloud)
  * create testing for API
  * fix bugs and log error
- * 
+ *
  */

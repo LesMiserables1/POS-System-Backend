@@ -38,7 +38,7 @@ const LoginLog = sequelize.define("LoginLog", {
     "status" : DataTypes.STRING
 })
 
-const Supplier = sequelize.define("supplier", {
+const Supplier = sequelize.define("Supplier", {
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     "name": DataTypes.STRING,
 })
@@ -60,7 +60,7 @@ const PurchasedLogDetail = sequelize.define("PurchasedLogDetail",{
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
 })
 // purchased log detail
-const SpendingLog = sequelize.define('spendingLog', {
+const SpendingLog = sequelize.define('SpendingLog', {
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     "name": DataTypes.STRING,
     "expense": DataTypes.DOUBLE
@@ -109,7 +109,7 @@ PurchasedLog.hasMany(TransactionDetail);
 TransactionDetail.belongsTo(PurchasedLog);
 
 
-sequelize.sync({ force: true });
+sequelize.sync({ force: false });
 
 
 export default {

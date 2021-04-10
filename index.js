@@ -61,10 +61,12 @@ app.post('/login', async (req, res) => {
         };
 
         let loginLog = await models.loginLog.create({
-            "userId": user.id,
+            UserId: user.id,
+            status: "IN"
         })
         if(user.role == 'kasir'){
             loginLog.initialMoney = body.initialMoney
+            loginLog.save()
         }
         let token = jwt.sign(payload, config.secret_key);
         return res.send({
@@ -90,6 +92,7 @@ app.post('/logout', verify.verify, async (req, res) => {
         loginLog.status = "OUT"
         if(req.decode.role == "kasir"){
             loginLog.finalMoney = body.finalMoney
+            loginLog.save()
         }
         return res.send({
             "status": "ok"

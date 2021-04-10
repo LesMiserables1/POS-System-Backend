@@ -62,9 +62,10 @@ app.post('/login', async (req, res) => {
 
         let loginLog = await models.loginLog.create({
             "userId": user.id,
-            initialMoney: body.initialMoney
         })
-
+        if(user.role == 'kasir'){
+            loginLog.initialMoney = body.initialMoney
+        }
         let token = jwt.sign(payload, config.secret_key);
         return res.send({
             "status": "ok",
@@ -87,7 +88,9 @@ app.post('/logout', verify.verify, async (req, res) => {
             }
         })
         loginLog.status = "OUT"
-        loginLog.finalMoney = body.finalMoney
+        if(req.decode.role == "kasir"){
+            loginLog.finalMoney = body.finalMoney
+        }
         return res.send({
             "status": "ok"
         })
@@ -526,6 +529,23 @@ app.post('/transaction/return', verify.verify, async (req, res) => {
     })
 })
 
+app.post('/create/expense',verify.verify,async(req,res)=>{
+    let body = req.body
+    try {
+        await models.spendingLog.create({
+            name : body.name,
+            expense : body.expense
+        })
+        return res.send({
+            status : "ok"
+        })
+    } catch (error) {
+        return res.send({
+            status : "failed",
+            msg : error.toString()
+        })        
+    }
+})
 app.post("/report/spending", verify.verify, async (req, res) => {
     let body = req.body
     try {

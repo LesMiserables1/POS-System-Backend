@@ -66,7 +66,7 @@ app.post('/login', async (req, res) => {
         })
         if(user.role == 'kasir'){
             loginLog.initialMoney = body.initialMoney
-            loginLog.save()
+            await loginLog.save()
         }
         let token = jwt.sign(payload, config.secret_key);
         return res.send({
@@ -129,17 +129,30 @@ app.post('/create/supplier', verify.verify, async (req, res) => {
     let body = req.body
 
     try {
-        await models.supplier.create({
+        let supplier = await models.supplier.create({
             name: body.name
         })
         return res.send({
-            status: "ok"
+            status: "ok",
+            data : supplier
         })
     } catch (error) {
         return res.send({
             status: "failed",
             msg: error
         })
+    }
+})
+app.post("/get/supplier",verify.verify,async(req,res)=>{
+    let body = req.body
+    try {
+        let supplier = await models.supplier.findAll()
+        return res.send({
+            status : "ok",
+            data : supplier
+        })
+    } catch (error) {
+        
     }
 })
 app.post('/get/products/supplier', verify.verify, async (req, res) => {
@@ -179,7 +192,8 @@ app.post('/get/product/details',verify.verify, async(req,res)=>{
         })
     } catch (error) {
         return res.send({
-            status: "failed"
+            status: "failed",
+            error : error.toString()
         })
     }
 })
@@ -232,7 +246,10 @@ app.post('/create/purchased/log', verify.verify, async (req, res) => {
     try {
         let supplierId = body.supplierId;
         let products = body.products;
-
+        await models.spendingLog.create({
+            name : "ekspedisi",
+            expense : body.expense
+        })
         for (let i = 0; i < products.length; ++i) {
             let product = products[i];
             if (product.status === 'new') {
@@ -279,12 +296,13 @@ app.post('/create/product', [upload.single("photo"), verify.verify], async (req,
             "path": path,
             "unit": body.unit
         })
-        if(sellingPrice){
+        if(body.sellingPrice){
             product.sellingPrice = body.sellingPrice;
-            product.save()
+            await product.save()
         }
         return res.send({
-            "status": "ok"
+            "status": "ok",
+            data : product
         })
     } catch (error) {
         console.log(error)
@@ -316,7 +334,7 @@ app.post('/search/product', verify.verify, async (req, res) => {
         })
     }
 })
-app.post('/get/product', verify.verify, async (req, res) => {
+app.post('/get/product/dashboard', verify.verify, async (req, res) => {
     let body = req.body
     try {
         let products = await models.product.findAll({
@@ -324,8 +342,33 @@ app.post('/get/product', verify.verify, async (req, res) => {
                 sellingPrice : {
                     [Op.gt] : 0
                 }
-            }
+            },
+            include : models.productDetail
         });
+        
+        for(let i = 0; i < products.length; ++i){
+            let productDetail = products[i].ProductDetails
+            let stock = 0;
+            for(let j = 0; j < productDetail.length; ++j){
+                stock += productDetail[j].stock - productDetail[j].usedStock 
+            }
+            products[i].setDataValue('stock',stock)
+        }
+        return res.send({
+            status: "ok",
+            data: products
+        })
+    } catch (error) {
+        return res.send({
+            status: "failed",
+            error : error.toString()
+        })
+    }
+})
+app.post('/get/product/purchased', verify.verify, async (req, res) => {
+    let body = req.body
+    try {
+        let products = await models.product.findAll();
         return res.send({
             status: "ok",
             data: products
@@ -403,8 +446,8 @@ app.post('/update/product', [upload.single("photo"), verify.verify], async (req,
 
 app.post('/delete/product', verify.verify, async (req, res) => {
     let body = req.body
-    let pathfile = path.join(path.resolve(), "/photos/")
     try {
+        let pathfile = path.join(path.resolve(), "/photos/")
         let product = await models.product.findByPk(body.id)
         fs.unlink(pathfile + product.path, (err) => {
             if (err && err.code == 'ENOENT') {
@@ -428,7 +471,7 @@ app.post('/delete/product', verify.verify, async (req, res) => {
     } catch (error) {
         return res.send({
             "status": "failed",
-            error
+            error : error.toString()
         })
     }
 })
@@ -581,10 +624,20 @@ app.post('/transaction/return', verify.verify, async (req, res) => {
 app.post('/create/expense',verify.verify,async(req,res)=>{
     let body = req.body
     try {
-        await models.spendingLog.create({
+        
+        let spending = await models.spendingLog.create({
             name : body.name,
-            expense : body.expense
         })
+        let expense = body.expense
+        if(body.productDetailId){
+            let productDetail = await models.productDetail.findByPk(body.productDetailId)
+            productDetail.usedStock += body.stock
+            expense = productDetail.capitalPrice * body.stock
+            spending.ProductDetailId = body.productDetailId
+            await productDetail.save()
+        }
+        spending.expense = expense
+        await spending.save()
         return res.send({
             status : "ok"
         })

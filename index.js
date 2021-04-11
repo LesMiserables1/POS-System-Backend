@@ -1,7 +1,7 @@
 import express from 'express';
 import verify from './verifyToken.js';
 import models from "./models.js";
-import crypto from "crypto";
+import crypto, { privateDecrypt } from "crypto";
 import jwt from 'jsonwebtoken';
 import config from './config.js';
 import pkg from 'sequelize';
@@ -164,6 +164,48 @@ app.post('/get/products/supplier', verify.verify, async (req, res) => {
     }
 })
 
+app.post('/get/product/details',verify.verify, async(req,res)=>{
+    const body = req.body
+    try {
+        let productDetails = await models.productDetail.findAll({
+            where : {
+                ProductId : body.ProductId,
+                SupplierId : body.SupplierId
+            }
+        })
+        return res.send({
+            status : "ok",
+            data : productDetails
+        })
+    } catch (error) {
+        return res.send({
+            status: "failed"
+        })
+    }
+})
+
+app.post("/update/product/details",verify.verify,async(req,res)=>{
+    let body = req.body
+    try {
+        let productDetail = await models.productDetail.findByPk(body.id);
+
+        if (body.capitalPrice) {
+            productDetail.capitalPrice = body.capitalPrice
+        }
+        if(body.stock){
+            productDetail.stock = body.stock
+        }
+        await product.save()
+        return res.send({
+            "status": "ok"
+        })
+    }catch(err){
+        return res.send({
+            "status": "failed",
+            err
+        })
+    }
+})
 /*
 
 {
@@ -232,11 +274,15 @@ app.post('/create/product', [upload.single("photo"), verify.verify], async (req,
         let product = await models.product.create({
             "name": body.name,
             "SKU": body.SKU,
-            "sellingPrice": body.sellingPrice,
+            // "sellingPrice": body.sellingPrice,
             "stock": body.stock,
             "path": path,
             "unit": body.unit
         })
+        if(sellingPrice){
+            product.sellingPrice = body.sellingPrice;
+            product.save()
+        }
         return res.send({
             "status": "ok"
         })
@@ -273,7 +319,13 @@ app.post('/search/product', verify.verify, async (req, res) => {
 app.post('/get/product', verify.verify, async (req, res) => {
     let body = req.body
     try {
-        let products = await models.product.findAll();
+        let products = await models.product.findAll({
+            where: {
+                sellingPrice : {
+                    [Op.gt] : 0
+                }
+            }
+        });
         return res.send({
             status: "ok",
             data: products
@@ -281,7 +333,7 @@ app.post('/get/product', verify.verify, async (req, res) => {
     } catch (error) {
         return res.send({
             status: "failed",
-            error
+            error : error.toString()
         })
     }
 })
@@ -317,12 +369,6 @@ app.post('/update/product', [upload.single("photo"), verify.verify], async (req,
         if (body.sellingPrice) {
             product.sellingPrice = body.sellingPrice
         }
-        if (body.capitalPrice) {
-            product.capitalPrice = body.capitalPrice
-        }
-        if (body.stock) {
-            product.stock = body.stock
-        }
         if (body.unit) {
             product.unit = body.unit
         }
@@ -350,7 +396,7 @@ app.post('/update/product', [upload.single("photo"), verify.verify], async (req,
     } catch (error) {
         return res.send({
             "status": "failed",
-            error
+            error 
         })
     }
 })

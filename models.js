@@ -20,7 +20,7 @@ const Product = sequelize.define('Product', {
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     "name": DataTypes.STRING,
     "SKU": DataTypes.STRING,
-    "sellingPrice": DataTypes.DOUBLE,
+    "sellingPrice": {type: DataTypes.DOUBLE, defaultValue:0},
     "path": DataTypes.STRING,
     "unit": DataTypes.STRING
 })

@@ -224,49 +224,141 @@ app.post("/update/product/details",verify.verify,async(req,res)=>{
 
 {
     supplierId : 1,
+    expense : 1000
     products : [
         {
-            productDetailId : 1,
-            stock : 80,
-            status : "old"
+            product : {
+                "name": body.name,
+                "SKU": body.SKU,
+                "path": path,
+                "unit": body.unit
+            },
+            capitalPrice : 1000,
+            stock : 10,
+            status : "new_product"
         },
         {
             productId : 1,
-            capitalPrice,
-            stock:
-            status : "new"
+            capitalPrice: 1000,
+            stock: 1000,
+            status : "new_price"
+        },
+        {
+            productDetailId: 1,
+            stock:10,
+            status: "add_stock"
         }
     ]
+
+          // {
+        //     "productId" : 1,
+        //     "capitalPrice": 1000,
+        //     "stock": 1000,
+        //     "status" : "new_price"
+        // },
+        // {
+        //     "productDetailId": 1,
+        //     "stock":10,
+        //     "status": "add_stock"
+        // }
 }
  */
+app.post('/get/purchased/log',verify.verify,async (req,res)=>{
+    let body = req.body
 
-app.post('/create/purchased/log', verify.verify, async (req, res) => {
+    try {
+        let purchasedLog = await models.purchasedLog.findAll({
+            include : [
+                {
+                    model : models.purchasedLogDetail,
+                    include : models.productDetail
+                },
+                models.spendingLog,
+                models.supplier
+            ],
+        })
+        return res.send({
+            status : "ok",
+            data : purchasedLog
+        })
+    } catch (error) {
+        return res.send({
+            status: "failed",
+            msg: error.toString()
+        })
+    }
+})
+app.post('/create/purchased/log', [verify.verify,upload.single("photo")], async (req, res) => {
     let body = req.body
 
     try {
         let supplierId = body.supplierId;
         let products = body.products;
-        await models.spendingLog.create({
+        let expense = await models.spendingLog.create({
             name : "ekspedisi",
             expense : body.expense
         })
+        let purchasedLog = await models.purchasedLog.create({
+            SpendingLogId : expense.id,
+            SupplierId : supplierId
+        })
+        let totalCapitalPrice = 0
         for (let i = 0; i < products.length; ++i) {
+            let path;
+            if (!req.file) {
+                path = 'default.jpg'
+            } else {
+                path = req.file.filename
+            }
             let product = products[i];
-            if (product.status === 'new') {
-                await models.productDetail.create({
+
+            if (product.status === 'new_price') {
+                let productDetail = await models.productDetail.create({
                     SupplierId: supplierId,
                     ProductId: product.productId,
                     capitalPrice: product.capitalPrice,
                     stock: product.stock,
                 })
-            } else {
+                totalCapitalPrice += product.capitalPrice*product.stock
+                await models.purchasedLogDetail.create({
+                    PurchasedLogId : purchasedLog.id,
+                    ProductDetailId : productDetail.id
+                })
+            } else if (product.status === "add_stock") {
                 let productDetail = await models.productDetail.findOne({
                     where: { id: product.productDetailId }
                 })
                 productDetail.stock += product.stock
                 await productDetail.save()
+                
+                totalCapitalPrice += productDetail.capitalPrice*product.stock
+                await models.purchasedLogDetail.create({
+                    PurchasedLogId : purchasedLog.id,
+                    ProductDetailId : productDetail.id
+                })
+            } else if (product.status === "new_product"){
+                let newProduct = product.product
+                newProduct = await models.product.create({
+                    "name": newProduct.name,
+                    "SKU": newProduct.SKU,
+                    "path": path,
+                    "unit": newProduct.unit
+                })
+                let productDetail = await models.productDetail.create({
+                    SupplierId: supplierId,
+                    ProductId: newProduct.id,
+                    capitalPrice: product.capitalPrice,
+                    stock: product.stock,
+                })
+                totalCapitalPrice += product.capitalPrice*product.stock
+                await models.purchasedLogDetail.create({
+                    PurchasedLogId : purchasedLog.id,
+                    ProductDetailId : productDetail.id
+                })
             }
         }
+        purchasedLog.total = totalCapitalPrice
+        await purchasedLog.save()
         return res.send({
             status: "ok"
         })
@@ -570,15 +662,6 @@ app.post('/transaction/detail', verify.verify, async (req, res) => {
 
 })
 
-/**
- * transactionDetail : [
- * {
- *      "id" : 1,
- *      "qtyReturn" : 10
- * }
- * ]
- * 
- */
 app.post('/transaction/return', verify.verify, async (req, res) => {
     let body = req.body
 
@@ -600,14 +683,7 @@ app.post('/transaction/return', verify.verify, async (req, res) => {
             await tdd.destroy()
         else await tdd.save()
     }
-    // await models.transaction.destroy({
-    //     where : {
-    //         attribute : ['Transaction.id',[Sequelize.fn('COUNT'),Sequelize.col('TransactionDetail.id'),'transactionCount']],
-    //         transactionCount : {
-    //             [Op.eq] : 0
-    //         }
-    //     }
-    // })
+
     await models.transaction.destroy({
         where: {
             totalPrice: {

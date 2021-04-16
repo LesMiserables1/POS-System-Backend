@@ -53,13 +53,13 @@ const ExpeditionLog = sequelize.define("ExpeditionLog", {
 
 const PurchasedLog = sequelize.define("PurchasedLog", {
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    "stock": DataTypes.INTEGER,
-    "usedStock": {type  : DataTypes.INTEGER,defaultValue:0},
+    "total" : DataTypes.DOUBLE,
+    "status" : {type : DataTypes.STRING,defaultValue:"BELUM LUNAS"},
 })
-const PurchasedLogDetail = sequelize.define("PurchasedLogDetail",{
+const PurchasedLogDetail = sequelize.define("PurchasedLogDetail", {
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
 })
-// purchased log detail
+
 const SpendingLog = sequelize.define('SpendingLog', {
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     "name": DataTypes.STRING,
@@ -88,6 +88,12 @@ ProductDetail.belongsTo(Product)
 
 PurchasedLog.hasMany(PurchasedLogDetail)
 PurchasedLogDetail.belongsTo(PurchasedLog)
+
+Supplier.hasMany(PurchasedLog)
+PurchasedLog.belongsTo(Supplier)
+
+SpendingLog.hasOne(PurchasedLog)
+PurchasedLog.belongsTo(SpendingLog)
 
 ProductDetail.hasMany(PurchasedLogDetail)
 PurchasedLogDetail.belongsTo(ProductDetail)
@@ -122,5 +128,6 @@ export default {
     spendingLog: SpendingLog,
     supplier: Supplier,
     loginLog: LoginLog,
-    productDetail : ProductDetail
+    productDetail : ProductDetail,
+    purchasedLogDetail : PurchasedLogDetail
 }

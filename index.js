@@ -271,7 +271,12 @@ app.post('/get/purchased/log',verify.verify,async (req,res)=>{
             include : [
                 {
                     model : models.purchasedLogDetail,
-                    include : models.productDetail
+                    include : [
+                        {
+                            model : models.productDetail,
+                            include : models.product
+                        }
+                    ]
                 },
                 models.spendingLog,
                 models.supplier

@@ -327,7 +327,8 @@ app.post('/create/purchased/log', [verify.verify,upload.single("photo")], async 
                 totalCapitalPrice += product.capitalPrice*product.stock
                 await models.purchasedLogDetail.create({
                     PurchasedLogId : purchasedLog.id,
-                    ProductDetailId : productDetail.id
+                    ProductDetailId : productDetail.id,
+                    stock: product.stock
                 })
             } else if (product.status === "add_stock") {
                 let productDetail = await models.productDetail.findOne({
@@ -339,7 +340,8 @@ app.post('/create/purchased/log', [verify.verify,upload.single("photo")], async 
                 totalCapitalPrice += productDetail.capitalPrice*product.stock
                 await models.purchasedLogDetail.create({
                     PurchasedLogId : purchasedLog.id,
-                    ProductDetailId : productDetail.id
+                    ProductDetailId : productDetail.id,
+                    stock : product.stock
                 })
             } else if (product.status === "new_product"){
                 let newProduct = product.product
@@ -358,7 +360,8 @@ app.post('/create/purchased/log', [verify.verify,upload.single("photo")], async 
                 totalCapitalPrice += product.capitalPrice*product.stock
                 await models.purchasedLogDetail.create({
                     PurchasedLogId : purchasedLog.id,
-                    ProductDetailId : productDetail.id
+                    ProductDetailId : productDetail.id,
+                    stock : product.stock
                 })
             }
         }
@@ -372,6 +375,73 @@ app.post('/create/purchased/log', [verify.verify,upload.single("photo")], async 
         return res.send({
             status: "failed",
             msg: error
+        })
+    }
+})
+app.post('/delete/purchased/log',verify.verify,async(req,res)=>{
+    let body = req.body
+    try {
+        let purchasedLog = await models.purchasedLog.findOne({
+            where: {
+                id : body.purchasedLogId
+            },include : models.purchasedLogDetail
+        })
+        let purchasedLogDetails = purchasedLog.PurchasedLogDetails
+        for(let i = 0; i < purchasedLogDetails.length; ++i){
+            let purchasedLogDetail = purchasedLogDetails[i]
+    
+            let productDetail = await models.productDetail.findByPk(purchasedLogDetail.ProductDetailId)
+            productDetail.stock -= purchasedLogDetail.stock
+            if(productDetail.stock == 0){
+                await productDetail.destroy()
+            }else{
+                await productDetail.save()
+            }
+            await purchasedLogDetail.destroy()
+        }
+        await purchasedLog.destroy()
+        return res.send({
+            status : "ok"
+        })
+    } catch (error) {
+        return res.send({
+            status : "failed",
+            msg : error.toString()
+        })
+    }
+})
+app.post('/update/purchased/log',verify.verify,async(req,res)=>{
+    let body = req.body
+    
+    try {
+        let purchasedLog = await models.purchasedLog.findByPk(body.purchasedLogId)
+
+        purchasedLog.status = body.status
+        await purchasedLog.save()
+        return res.send({
+            status : "ok",
+        })
+    } catch (error) {
+        return res.send({
+            status : "failed",
+            msg : error.toString()
+        })
+    }
+})
+app.post('/update/purchased/log',verify.verify,async(req,res)=>{
+    let body = req.body
+    try {
+        let purchasedLog = await models.purchasedLog.findByPk(body.purchasedLogId)
+
+        purchasedLog.status = body.status
+        await purchasedLog.save()
+        return res.send({
+            status : "ok",
+        })
+    } catch (error) {
+        return res.send({
+            status : "failed",
+            msg : error.toString()
         })
     }
 })
@@ -713,7 +783,7 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
         if(body.productDetailId){
             let productDetail = await models.productDetail.findByPk(body.productDetailId)
             productDetail.usedStock += body.stock
-            expense = productDetail.capitalPrice * body.stock
+            expense = 0
             spending.ProductDetailId = body.productDetailId
             await productDetail.save()
         }

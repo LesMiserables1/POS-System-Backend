@@ -58,6 +58,7 @@ const PurchasedLog = sequelize.define("PurchasedLog", {
 })
 const PurchasedLogDetail = sequelize.define("PurchasedLogDetail", {
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    "stock" : DataTypes.INTEGER
 })
 
 const SpendingLog = sequelize.define('SpendingLog', {

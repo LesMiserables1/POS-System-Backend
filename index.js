@@ -465,7 +465,17 @@ app.post('/get/product/dashboard', verify.verify, async (req, res) => {
 app.post('/get/product/purchased', verify.verify, async (req, res) => {
     let body = req.body
     try {
-        let products = await models.product.findAll();
+        let products = await models.product.findAll({
+            include : models.productDetail
+        });
+        for(let i = 0; i < products.length; ++i){
+            let productDetail = products[i].ProductDetails
+            let stock = 0;
+            for(let j = 0; j < productDetail.length; ++j){
+                stock += productDetail[j].stock - productDetail[j].usedStock 
+            }
+            products[i].setDataValue('stock',stock)
+        }
         return res.send({
             status: "ok",
             data: products

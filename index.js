@@ -33,7 +33,7 @@ app.get('/', (req, res) => {
 })
 
 app.get('/get/photo', (req, res) => {
-    let body = req.body
+    let body = req.query
     try {
 
         let filePath = path.join(path.resolve(), "/photos/");

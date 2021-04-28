@@ -846,12 +846,16 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
 })
 app.post("/report/spending", verify.verify, async (req, res) => {
     let body = req.body
+    let bod = new Date(body.from_date)
+    bod = new Date(bod.getFullYear(),bod.getMonth(),bod.getDate(),0,0,0);
+    let eod = new Date(body.to_date)
+    eod = new Date(eod.getFullYear(),eod.getMonth(),eod.getDate(),23,59,59)
     try {
         let spending = await models.spendingLog.findAll({
             where:{
                 createdAt : {
-                    [Op.gte] : new Date(body.from_date),
-                    [Op.lte] : new Date(body.to_date)
+                    [Op.gte] : bod,
+                    [Op.lte] : eod
                 }
             }
         })
@@ -872,17 +876,20 @@ app.post("/report/spending", verify.verify, async (req, res) => {
 })
 app.post("/report/sales", verify.verify, async (req, res) => {
     let body = req.body
+    let bod = new Date(body.from_date)
+    bod = new Date(bod.getFullYear(),bod.getMonth(),bod.getDate(),0,0,0);
+    let eod = new Date(body.to_date)
+    eod = new Date(eod.getFullYear(),eod.getMonth(),eod.getDate(),23,59,59);
     try {
         let tdetails = await models.transactionDetail.findAll({
             where:{
                 createdAt : {
-                    [Op.gte] : new Date(body.from_date),
-                    [Op.lte] : new Date(body.to_date)
+                    [Op.gte] :bod,
+                    [Op.lte] : eod
                 },
             }, 
             include : models.productDetail
         })
-        console.log(tdetails)
         let total_jual = 0;
         let total_modal = 0;
         for(let i = 0; i < tdetails.length; ++i){

@@ -5,7 +5,8 @@ const { Sequelize, DataTypes } = pkg;
 const sequelize = new Sequelize(config.db_name, config.db_username, config.db_password, {
     host: 'localhost',
     port: 3306,
-    dialect: 'mysql'
+    dialect: 'mysql',
+    timezone: '+07:00'
 });
 
 const User = sequelize.define('User', {

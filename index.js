@@ -825,12 +825,28 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
             name : body.name,
         })
         let expense = body.expense
-        if(body.productDetailId){
-            let productDetail = await models.productDetail.findByPk(body.productDetailId)
-            productDetail.usedStock += body.stock
+        if(body.productId){
+            let productDetail = await models.productDetail.findAll({
+                where : {
+                    ProductId : body.productId,
+                    stock: {
+                        [Op.gt]: Sequelize.col('usedStock')
+                    }
+                },
+            })
+            let x = 0
+            let qty = body.stock
+            while(qty > 0){
+                const available_stock = productDetail[x].stock - productDetail[x].usedStock
+                const min_qty = Math.min(available_stock, qty)
+                qty -= min_qty
+
+                productDetail[x].usedStock += min_qty;
+                await productDetail[x].save()
+                x++;
+            }
             expense = 0
-            spending.ProductDetailId = body.productDetailId
-            await productDetail.save()
+            spending.ProductId = body.productId
         }
         spending.expense = expense
         await spending.save()

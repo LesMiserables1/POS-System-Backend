@@ -116,8 +116,8 @@ TransactionDetail.belongsTo(Transaction);
 ProductDetail.hasMany(TransactionDetail);
 TransactionDetail.belongsTo(ProductDetail);
 
-ProductDetail.hasMany(SpendingLog)
-SpendingLog.belongsTo(ProductDetail)
+Product.hasMany(SpendingLog)
+SpendingLog.belongsTo(Product)
 sequelize.sync({ force: false });
 
 

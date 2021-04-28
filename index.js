@@ -711,28 +711,45 @@ app.post('/get/transaction/detail', verify.verify, async (req, res) => {
             include: [
                 {
                     model: models.transactionDetail,
-                    include: models.product
+                    include : [{
+                        model: models.productDetail,
+                        include : [{
+                            model : models.product
+                        }]
+                    }]
                 }
             ]
         })
+        console.log(transaction)
         return res.send({
             "status": "ok",
             "data": transaction
         })
     } catch (error) {
         return res.send({
-            "status": "failed"
+            "status": "failed",
+            "msg" : error.toString()
         })
     }
 
 })
 
-app.post('/transaction/detail', verify.verify, async (req, res) => {
+app.post('/retrieve/transaction/detail', verify.verify, async (req, res) => {
     let body = req.body
     try {
         let transaction = await models.transaction.findByPk(body.transaction_id,
             {
-                include: { all: true },
+                include: [
+                    {
+                        model: models.transactionDetail,
+                        include : [{
+                            model: models.productDetail,
+                            include : [{
+                                model : models.product
+                            }]
+                        }]
+                    }
+                ]
 
             })
         return res.send({
@@ -750,6 +767,7 @@ app.post('/transaction/detail', verify.verify, async (req, res) => {
 app.post('/transaction/return', verify.verify, async (req, res) => {
     let body = req.body
 
+    
     for (let i = 0; i < body.transactionDetail.length; ++i) {
         let td = body.transactionDetail[i]
 
@@ -781,7 +799,24 @@ app.post('/transaction/return', verify.verify, async (req, res) => {
         "status": "ok"
     })
 })
+app.post('/get/expense',verify.verify,async(req,res)=>{
+    let body = req.body
 
+    try {
+        let spending = await models.spendingLog.findAll({
+            include : {all : true}
+        })
+        return res.send({
+            "status" : "ok",
+            data : spending
+        }) 
+    } catch (error) {
+        return res.send({
+            "status" : "failed",
+            msg : error.toString()
+        }) 
+    }
+})
 app.post('/create/expense',verify.verify,async(req,res)=>{
     let body = req.body
     try {
@@ -815,8 +850,8 @@ app.post("/report/spending", verify.verify, async (req, res) => {
         let spending = await models.spendingLog.findAll({
             where:{
                 createdAt : {
-                    [Op.gte] : body.from_date,
-                    [Op.lte] : body.to_date
+                    [Op.gte] : new Date(body.from_date),
+                    [Op.lte] : new Date(body.to_date)
                 }
             }
         })
@@ -841,8 +876,8 @@ app.post("/report/sales", verify.verify, async (req, res) => {
         let tdetails = await models.transactionDetail.findAll({
             where:{
                 createdAt : {
-                    [Op.gte] : body.from_date,
-                    [Op.lte] : body.to_date
+                    [Op.gte] : new Date(body.from_date),
+                    [Op.lte] : new Date(body.to_date)
                 },
             }, 
             include : models.productDetail
@@ -881,5 +916,7 @@ app.listen(3000);
  * distributed application (using cloud)
  * create testing for API
  * fix bugs and log error
- *
+ * transaction return
+ * transaction detail
+ * spending
  */

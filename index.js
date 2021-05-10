@@ -92,8 +92,8 @@ app.post('/logout', verify.verify, async (req, res) => {
         loginLog.status = "OUT"
         if(req.decode.role == "kasir"){
             loginLog.finalMoney = body.finalMoney
-            loginLog.save()
         }
+        await loginLog.save()
         return res.send({
             "status": "ok"
         })
@@ -101,6 +101,31 @@ app.post('/logout', verify.verify, async (req, res) => {
         return res.send({
             "status": "failed",
             "error": error
+        })
+    }
+})
+app.post('/get/log',async(req,res)=>{
+    let body = req.body
+    try {
+        const bod = body.from_date  
+        const eod = body.to_date
+        let log = await models.loginLog.findAll({
+            where : {
+                createdAt : {
+                    [Op.gte] :bod,
+                    [Op.lte] : eod
+                },
+            },
+            include : models.user
+        })
+        return res.send({
+            status : "ok",
+            data : log
+        })
+    } catch (error) {
+        return res.send({
+            status : "failed",
+            msg : error.toString()
         })
     }
 })

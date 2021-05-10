@@ -720,7 +720,6 @@ app.post('/get/transaction/detail', verify.verify, async (req, res) => {
                 }
             ]
         })
-        console.log(transaction)
         return res.send({
             "status": "ok",
             "data": transaction
@@ -779,37 +778,61 @@ data =
 app.post('/transaction/return', verify.verify, async (req, res) => {
     let body = req.body
 
+    try {
+        for(let i = 0; i < body.data.length; ++i){
+            let product_id = body.data[i].product_id
+            let transaction = await models.transactionDetail.findAll({
+                where : {
+                    TransactionId : body.transaction_id
+                },
+                include : [
+                    {
+                        model : models.productDetail,
+                        where : {
+                            ProductId : product_id
+                        }
+                    }
+                ]
+            })
+            let qty = body.data[i].qty_return
+            let x = 0
+            let totalPriceRet = 0
+            while(qty > 0){
+                let productDetail = transaction[x].ProductDetail
+                let min_stock = Math.min(qty,productDetail.usedStock)
+                productDetail.usedStock -= min_stock
+
+                transaction[x].qty -= min_stock
+                await productDetail.save()
+                totalPriceRet += transaction[x].sellingPrice*min_stock
+                
+                if(transaction[x].qty == 0){
+                    await transaction[x].destroy()
+                }else{
+                    transaction[x].totalPriceQty -= min_stock*transaction[x].sellingPrice
+                    await transaction[x].save()
+                }
+                x++ 
+                qty -= min_stock
+
+            }
+            let transaction_parent = await models.transaction.findByPk(body.transaction_id)
+            transaction_parent.totalPrice -= totalPriceRet
+            await transaction_parent.save()
+        }
+           
+        return res.send({
+            "status": "ok"
+        })
     
-    for (let i = 0; i < body.transactionDetail.length; ++i) {
-        let td = body.transactionDetail[i]
-
-        let tdd = await models.transactionDetail.findByPk(td.id)
-        let product = await models.product.findByPk(tdd.ProductId)
-        let tr = await models.transaction.findByPk(tdd.TransactionId)
-        product.stock += td.qtyReturn
-        let totalPriceReturn = tdd.sellingPrice * td.qtyReturn
-        tdd.totalPriceQty -= totalPriceReturn
-        tr.totalPrice -= totalPriceReturn
-        tdd.qty -= td.qtyReturn
-
-        await product.save()
-        await tr.save()
-        if (tdd.totalPriceQty == 0)
-            await tdd.destroy()
-        else await tdd.save()
+    } catch (error) {
+        return res.send({
+            "status": "failed",
+            msg : error.toString()
+        })
     }
 
-    await models.transaction.destroy({
-        where: {
-            totalPrice: {
-                [Op.eq]: 0
-            }
-        }
-    })
 
-    return res.send({
-        "status": "ok"
-    })
 })
 app.post('/get/expense',verify.verify,async(req,res)=>{
     let body = req.body

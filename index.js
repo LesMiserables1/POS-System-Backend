@@ -764,6 +764,18 @@ app.post('/retrieve/transaction/detail', verify.verify, async (req, res) => {
 
 })
 
+/* 
+data = 
+{
+    transaction_id : 1,
+    data : [
+        {
+            product_id:1,
+            qty : 10
+        }
+    ]
+}
+*/
 app.post('/transaction/return', verify.verify, async (req, res) => {
     let body = req.body
 
@@ -834,13 +846,19 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
                     }
                 },
             })
+            console.log(productDetail)
             let x = 0
             let qty = body.stock
             while(qty > 0){
                 const available_stock = productDetail[x].stock - productDetail[x].usedStock
                 const min_qty = Math.min(available_stock, qty)
                 qty -= min_qty
-
+                
+                let spendingLogDetail = await models.spendingLogDetail.create({
+                    SpendingLogId : spending.id,
+                    stock : min_qty,
+                    ProductDetailId	: productDetail[x].id
+                })
                 productDetail[x].usedStock += min_qty;
                 await productDetail[x].save()
                 x++;
@@ -858,6 +876,40 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
             status : "failed",
             msg : error.toString()
         })        
+    }
+})
+app.post('/delete/expense',verify.verify,async(req,res)=>{
+    let body = req.body
+
+    try {
+        let expense = await models.spendingLog.findOne({
+            where : {
+                id : body.expenseId
+            },
+            include : [{
+                model : models.spendingLogDetail,
+                include : models.productDetail
+            }
+            ]
+        });
+        
+        if(expense.SpendingLogDetails){
+            for(let i = 0; i < expense.SpendingLogDetails.length; ++i ){
+                let productDetail = expense.SpendingLogDetails[0].ProductDetail
+                productDetail.usedStock -= expense.SpendingLogDetails[0].stock
+                
+                await productDetail.save()
+            }
+        }
+        await expense.destroy()
+        return res.send({
+            status : "ok",
+        })
+    } catch (error) {
+        return res.send({
+            status : "failed",
+            msg : error.toString()
+        })   
     }
 })
 app.post("/report/spending", verify.verify, async (req, res) => {

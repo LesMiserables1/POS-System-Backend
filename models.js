@@ -78,7 +78,10 @@ const TransactionDetail = sequelize.define('TransactionDetail', {
     "totalPriceQty": DataTypes.DOUBLE,
     "sellingPrice": DataTypes.INTEGER
 })
-
+const SpendingLogDetail = sequelize.define('SpendingLogDetail',{
+    "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+    "stock" : DataTypes.INTEGER
+})
 Supplier.hasMany(ExpeditionLog);
 ExpeditionLog.belongsTo(Supplier);
 
@@ -109,7 +112,6 @@ SpendingLog.belongsTo(User);
 User.hasMany(LoginLog);
 LoginLog.belongsTo(User);
 
-
 Transaction.hasMany(TransactionDetail);
 TransactionDetail.belongsTo(Transaction);
 
@@ -118,6 +120,13 @@ TransactionDetail.belongsTo(ProductDetail);
 
 Product.hasMany(SpendingLog)
 SpendingLog.belongsTo(Product)
+
+SpendingLog.hasMany(SpendingLogDetail)
+SpendingLogDetail.belongsTo(SpendingLog)
+
+ProductDetail.hasMany(SpendingLogDetail)
+SpendingLogDetail.belongsTo(ProductDetail)
+
 sequelize.sync({ force: false });
 
 
@@ -131,5 +140,6 @@ export default {
     supplier: Supplier,
     loginLog: LoginLog,
     productDetail : ProductDetail,
-    purchasedLogDetail : PurchasedLogDetail
+    purchasedLogDetail : PurchasedLogDetail,
+    spendingLogDetail : SpendingLogDetail
 }

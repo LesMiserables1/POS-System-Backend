@@ -333,7 +333,9 @@ app.post('/create/purchased/log', [verify.verify,upload.single("photo")], async 
         let products = body.products;
         let expense = await models.spendingLog.create({
             name : "ekspedisi",
-            expense : body.expense
+            expense : body.expense,
+            UserId : req.decode.id,
+            note : "barang masuk"
         })
         let purchasedLog = await models.purchasedLog.create({
             SpendingLogId : expense.id,

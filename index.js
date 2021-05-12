@@ -890,6 +890,9 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
         
         let spending = await models.spendingLog.create({
             name : body.name,
+            note: body.note,
+            createdAt : body.createdAt,
+            UserId : req.decode.id
         })
         let expense = body.expense
         if(body.productId){
@@ -901,7 +904,6 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
                     }
                 },
             })
-            console.log(productDetail)
             let x = 0
             let qty = body.stock
             while(qty > 0){
@@ -922,6 +924,7 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
             spending.ProductId = body.productId
         }
         spending.expense = expense
+
         await spending.save()
         return res.send({
             status : "ok"

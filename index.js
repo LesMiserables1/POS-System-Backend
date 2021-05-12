@@ -107,8 +107,10 @@ app.post('/logout', verify.verify, async (req, res) => {
 app.post('/get/log',async(req,res)=>{
     let body = req.body
     try {
-        const bod = body.from_date  
-        const eod = body.to_date
+        let bod = new Date(body.from_date)
+        bod = new Date(bod.getFullYear(),bod.getMonth(),bod.getDate(),0,0,0);
+        let eod = new Date(body.to_date)
+        eod = new Date(eod.getFullYear(),eod.getMonth(),eod.getDate(),23,59,59);
         let log = await models.loginLog.findAll({
             where : {
                 createdAt : {
@@ -116,7 +118,12 @@ app.post('/get/log',async(req,res)=>{
                     [Op.lte] : eod
                 },
             },
-            include : models.user
+            include : [{
+                model: models.user,
+                where : {
+                    role : 'kasir'
+                }
+            }]
         })
         return res.send({
             status : "ok",

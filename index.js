@@ -908,6 +908,7 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
             })
             let x = 0
             let qty = body.stock
+            let totalExpense = 0;
             while(qty > 0){
                 const available_stock = productDetail[x].stock - productDetail[x].usedStock
                 const min_qty = Math.min(available_stock, qty)
@@ -919,10 +920,11 @@ app.post('/create/expense',verify.verify,async(req,res)=>{
                     ProductDetailId	: productDetail[x].id
                 })
                 productDetail[x].usedStock += min_qty;
+                totalExpense += min_qty*productDetail[x].capitalPrice
                 await productDetail[x].save()
                 x++;
             }
-            expense = 0
+            expense = totalExpense
             spending.ProductId = body.productId
         }
         spending.expense = expense

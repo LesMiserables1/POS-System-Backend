@@ -754,9 +754,37 @@ app.post('/get/transaction/detail', verify.verify, async (req, res) => {
                 }
             ]
         })
+        let data = []
+        for(let i = 0; i < transaction.length; ++i){
+            let prodUnique = []
+            let tDetail = transaction[i]
+
+            for(let j = 0; j < tDetail.length; ++j){
+                let productDetail = tDetail[j].productDetail
+                
+                let flag = 0
+                for(let k = 0; k < prodUnique.length; ++k){
+                    if(productDetail.ProductId == prodUnique[k].id){
+                        prodUnique[k].qty += tDetail[j].qty
+                        prodUnique[k].totalPriceQty += tDetail[j].totalPriceQty
+                        flag = 1
+                        break;
+                    }
+                }
+                if(flag == 0){
+                    prodUnique.push({
+                        id : productDetail.ProductId,
+                        qty : tDetail[j].qty,
+                        totalPriceQty : tDetail[j].totalPriceQty,
+                        sellingPrice : tDetail[j].sellingPrice
+                    })
+                }
+            }
+            data.push(prodUnique)
+        }
         return res.send({
             "status": "ok",
-            "data": transaction
+            "data": data
         })
     } catch (error) {
         return res.send({

@@ -757,11 +757,9 @@ app.post('/get/transaction/detail', verify.verify, async (req, res) => {
         let data = []
         for(let i = 0; i < transaction.length; ++i){
             let prodUnique = []
-            let tDetail = transaction[i]
-
+            let tDetail = transaction[i].TransactionDetails
             for(let j = 0; j < tDetail.length; ++j){
-                let productDetail = tDetail[j].productDetail
-                
+                let productDetail = tDetail[j].ProductDetail
                 let flag = 0
                 for(let k = 0; k < prodUnique.length; ++k){
                     if(productDetail.ProductId == prodUnique[k].id){
@@ -774,13 +772,15 @@ app.post('/get/transaction/detail', verify.verify, async (req, res) => {
                 if(flag == 0){
                     prodUnique.push({
                         id : productDetail.ProductId,
+                        name : productDetail.Product.name,
                         qty : tDetail[j].qty,
                         totalPriceQty : tDetail[j].totalPriceQty,
-                        sellingPrice : tDetail[j].sellingPrice
+                        sellingPrice : tDetail[j].sellingPrice,
+                        unit : productDetail.Product.unit
                     })
                 }
             }
-            data.push(prodUnique)
+            data.push({detail:prodUnique,transaction_id:transaction[i].id,createdAt:transaction[i].createdAt,totalPrice:transaction[i].totalPrice})
         }
         return res.send({
             "status": "ok",

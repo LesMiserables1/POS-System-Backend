@@ -128,7 +128,7 @@ SpendingLogDetail.belongsTo(SpendingLog)
 ProductDetail.hasMany(SpendingLogDetail)
 SpendingLogDetail.belongsTo(ProductDetail)
 
-sequelize.sync({ force: false });
+sequelize.sync({ force: true });
 
 
 export default {

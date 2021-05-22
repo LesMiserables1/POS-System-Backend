@@ -880,9 +880,11 @@ app.post('/transaction/return', verify.verify, async (req, res) => {
             }
             let transaction_parent = await models.transaction.findByPk(body.transaction_id)
             transaction_parent.totalPrice -= totalPriceRet
+            if(transaction_parent.totalPrice == 0){
+                await transaction_parent.destroy()
+            }
             await transaction_parent.save()
         }
-           
         return res.send({
             "status": "ok"
         })

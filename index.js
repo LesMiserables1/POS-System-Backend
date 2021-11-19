@@ -13,6 +13,8 @@ import * as fs from 'fs';
 const { Op, Sequelize } = pkg;
 const app = express();
 
+app.set('view engine', 'ejs');
+
 const diskStorage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, path.join(path.resolve(), "/photos/"));
@@ -28,8 +30,70 @@ const upload = multer({ storage: diskStorage })
 app.use(express.json());
 app.use(cors());
 
-app.get('/', (req, res) => {
-    return res.send("hello world");
+app.get('/invoice', async(req, res) => {
+    let body = req.query;
+    let transactionId = body.transactionId
+    
+    let tokoName = body.tokoName
+    if(tokoName == undefined){
+        tokoName = "ATIK"
+    }
+
+    let noTelp = body.noTelp
+    if(noTelp == undefined){
+        noTelp = "DEFAULT"
+    }
+
+    let address = body.address
+    if(address == undefined){
+        address = "DEFAULT"
+    }
+
+    let transaction = await models.transaction.findOne({
+        where : {id:transactionId},
+        include : {
+            model: models.transactionDetail,
+            include : {
+                model : models.productDetail,
+                 include : [{
+                    model : models.product
+                }],
+            },
+        }
+    })
+    let distintProduct = []
+    let renderTransaction = {}
+    
+    for(let i = 0; i < transaction.TransactionDetails.length; ++i){
+        let tDetail = transaction.TransactionDetails[i]
+        let pDetail = tDetail.ProductDetail
+        
+        if (distintProduct.includes(pDetail.ProductId)){
+            renderTransaction[pDetail.ProductId].totalPriceQty += tDetail.totalPriceQty
+            renderTransaction[pDetail.ProductId].qty += tDetail.qty
+        }else {
+            renderTransaction[pDetail.ProductId] = {
+                "sellingPrice": tDetail.sellingPrice,
+                "name": pDetail.Product.name,
+                "totalPriceQty" : tDetail.totalPriceQty,
+                "qty": tDetail.qty
+            }
+            distintProduct.push(pDetail.ProductId)
+        }
+    }
+    let user = {"name": "test"}
+    if(req.decode != undefined){
+        user = await models.user.findByPk(req.decode.id)
+    }
+    
+    res.render('invoice',{
+        totalPrice: transaction.totalPrice,
+        transaction: renderTransaction,
+        user : user.name,
+        tokoName: tokoName,
+        noTelp: noTelp,
+        address: address
+    });
 })
 
 app.get('/get/photo', (req, res) => {

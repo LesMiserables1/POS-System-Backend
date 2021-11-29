@@ -36,7 +36,8 @@ const LoginLog = sequelize.define("LoginLog", {
     "id": { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     "initialMoney": DataTypes.DOUBLE,
     "finalMoney": DataTypes.DOUBLE,
-    "status" : DataTypes.STRING
+    "status" : DataTypes.STRING,
+    "logoutAt" : DataTypes.DATE
 })
 
 const Supplier = sequelize.define("Supplier", {
@@ -113,6 +114,9 @@ SpendingLog.belongsTo(User);
 User.hasMany(LoginLog);
 LoginLog.belongsTo(User);
 
+LoginLog.hasMany(Transaction)
+Transaction.belongsTo(LoginLog)
+
 Transaction.hasMany(TransactionDetail);
 TransactionDetail.belongsTo(Transaction);
 
@@ -132,6 +136,8 @@ sequelize.sync({ force: false });
 
 
 export default {
+
+    sequelize,
     user: User,
     product: Product,
     transaction: Transaction,

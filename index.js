@@ -578,23 +578,6 @@ app.post('/update/purchased/log', verify.verify, async (req, res) => {
         })
     }
 })
-app.post('/update/purchased/log', verify.verify, async (req, res) => {
-    let body = req.body
-    try {
-        let purchasedLog = await models.purchasedLog.findByPk(body.purchasedLogId)
-
-        purchasedLog.status = body.status
-        await purchasedLog.save()
-        return res.send({
-            status: "ok",
-        })
-    } catch (error) {
-        return res.send({
-            status: "failed",
-            msg: error.toString()
-        })
-    }
-})
 app.post('/create/product', [upload.single("photo"), verify.verify], async (req, res) => {
     let body = req.body
 

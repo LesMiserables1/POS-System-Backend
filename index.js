@@ -196,7 +196,12 @@ app.post('/get/login/log', async (req, res) => {
                         include: models.productDetail
                     }]
                 },
-                models.user
+                {
+                    model: models.user,
+                    where : {
+                        role : "kasir"
+                    }
+                }
             ]
         })
         let results = []
@@ -226,7 +231,7 @@ app.post('/get/login/log', async (req, res) => {
             }
             let temp = {
                 "initialMoney": logs.initialMoney,
-                "user": logs.User.name,
+                "name": logs.User.name,
                 "finalMoney": logs.finalMoney,
                 "totalSales": total_jual,
                 "totalCapital": total_modal,
@@ -850,6 +855,7 @@ app.post('/order/product', verify.verify, async (req, res) => {
         })
 
         return res.send({
+            "transactionId": result.id,
             "status": "ok"
         })
     } catch (error) {
@@ -1045,7 +1051,6 @@ app.post('/create/expense', verify.verify, async (req, res) => {
         let spending = await models.spendingLog.create({
             name: body.name,
             note: body.note,
-            createdAt: body.createdAt,
             UserId: req.decode.id
         })
         let expense = body.expense

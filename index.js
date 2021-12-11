@@ -272,7 +272,30 @@ app.post('/register', async (req, res) => {
     }
 
 });
-
+app.post('/update/password', verify.verify, async (req, res) => {
+    let body = req.body
+    console.log(body)
+    let oldPasswordHash = crypto.createHash('sha256').update(body.oldPassword).digest('base64')
+    try {
+        let account = await models.user.findOne({
+            where: {
+                id: req.decode.id,
+                password: oldPasswordHash
+            }
+        })
+        account.password = crypto.createHash('sha256').update(body.newPassword).digest('base64')
+        await account.save()
+        return res.send({
+            status: "ok"
+        })
+    } catch (error) {
+        console.log(error)
+        return res.send({
+            status: "failed",
+            msg: error
+        })
+    }
+});
 app.post('/create/supplier', verify.verify, async (req, res) => {
     let body = req.body
 

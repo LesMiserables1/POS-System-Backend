@@ -9,8 +9,8 @@
     <table cellpadding="0" cellspacing="0" width="100%">
       <tr>
         <td>
-          <b>No. Faktur:</b> 123<br>
-          <b>Tanggal:</b> 20 Desember 2021<br>
+          <b>No. Faktur:</b> <%= NoFaktur%><br>
+          <b>Tanggal:</b> <%= tanggal%> <br>
           <b>Sales:</b> <%= user%>
         </td>
         <td colspan="4">
@@ -80,22 +80,7 @@
               </td>
             </tr>
           <% } %>
-          <% for(var t in transaction) { %>
-            <tr class="item">
-              <td>
-                <%=  transaction[t].qty %>
-              </td>
-              <td>
-                <%=  transaction[t].name %>
-              </td>
-              <td>
-                Rp. <%=   transaction[t].sellingPrice %>
-              </td>
-              <td>
-                Rp. <%=   transaction[t].totalPriceQty %>
-              </td>
-            </tr>
-          <% } %>
+
           <tr class="item" style="background-color:LightGray">
           
             <td colspan="3" style="border-bottom: 2px solid rgb(123, 123, 143)">

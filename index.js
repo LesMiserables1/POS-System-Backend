@@ -9,6 +9,8 @@ import multer from 'multer';
 import path from 'path';
 import cors from 'cors';
 import * as fs from 'fs';
+import moment from 'moment';
+
 
 const { Op, Sequelize } = pkg;
 const app = express();
@@ -34,18 +36,18 @@ app.get('/invoice', async (req, res) => {
     let body = req.query;
     let transactionId = body.transactionId
 
-    let tokoName = body.tokoName
-    if (tokoName == undefined) {
+    let tokoName = config.nama_toko
+    if (tokoName == "") {
         tokoName = "ATIK"
     }
 
-    let noTelp = body.noTelp
-    if (noTelp == undefined) {
+    let noTelp = config.no_telp
+    if (noTelp == "") {
         noTelp = "DEFAULT"
     }
 
-    let address = body.address
-    if (address == undefined) {
+    let address = config.alamat
+    if (address == "") {
         address = "DEFAULT"
     }
 
@@ -90,11 +92,12 @@ app.get('/invoice', async (req, res) => {
                 }
             },
         )
-        console.log(user)
-
     user = {"name" : user.LoginLog.User.name}
     
+    let date = moment(transaction.createdAt)
     res.render('invoice', {
+        NoFaktur : body.transactionId,
+        tanggal : date.format("DD MMMM YYYY"),
         totalPrice: transaction.totalPrice,
         transaction: renderTransaction,
         user: user.name,

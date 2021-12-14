@@ -80,6 +80,22 @@
               </td>
             </tr>
           <% } %>
+          <% for(var t in transaction) { %>
+            <tr class="item">
+              <td>
+                <%=  transaction[t].qty %>
+              </td>
+              <td>
+                <%=  transaction[t].name %>
+              </td>
+              <td>
+                Rp. <%=   transaction[t].sellingPrice %>
+              </td>
+              <td>
+                Rp. <%=   transaction[t].totalPriceQty %>
+              </td>
+            </tr>
+          <% } %>
           <tr class="item" style="background-color:LightGray">
           
             <td colspan="3" style="border-bottom: 2px solid rgb(123, 123, 143)">

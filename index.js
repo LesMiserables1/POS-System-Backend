@@ -81,11 +81,19 @@ app.get('/invoice', async (req, res) => {
             distintProduct.push(pDetail.ProductId)
         }
     }
-    let user = { "name": "test" }
-    if (req.decode != undefined) {
-        user = await models.user.findByPk(req.decode.id)
-    }
+    let user = await models.transaction.findOne(
+            {
+                where : { id : transactionId},
+                include : {
+                    model : models.loginLog,
+                    include : models.user
+                }
+            },
+        )
+        console.log(user)
 
+    user = {"name" : user.LoginLog.User.name}
+    
     res.render('invoice', {
         totalPrice: transaction.totalPrice,
         transaction: renderTransaction,

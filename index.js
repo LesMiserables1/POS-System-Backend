@@ -65,6 +65,7 @@ app.get('/invoice', async (req, res) => {
     })
     let distintProduct = []
     let renderTransaction = {}
+    let formatter = new Intl.NumberFormat('id', { style: 'currency', currency: 'IDR' })
 
     for (let i = 0; i < transaction.TransactionDetails.length; ++i) {
         let tDetail = transaction.TransactionDetails[i]
@@ -75,9 +76,9 @@ app.get('/invoice', async (req, res) => {
             renderTransaction[pDetail.ProductId].qty += tDetail.qty
         } else {
             renderTransaction[pDetail.ProductId] = {
-                "sellingPrice": tDetail.sellingPrice,
+                "sellingPrice": formatter.format(tDetail.sellingPrice),
                 "name": pDetail.Product.name,
-                "totalPriceQty": tDetail.totalPriceQty,
+                "totalPriceQty": formatter.format(tDetail.totalPriceQty),
                 "qty": tDetail.qty
             }
             distintProduct.push(pDetail.ProductId)
@@ -98,7 +99,7 @@ app.get('/invoice', async (req, res) => {
     res.render('invoice', {
         NoFaktur : body.transactionId,
         tanggal : date.format("DD MMMM YYYY"),
-        totalPrice: transaction.totalPrice,
+        totalPrice: formatter.format(transaction.totalPrice),
         transaction: renderTransaction,
         user: user.name,
         tokoName: tokoName,

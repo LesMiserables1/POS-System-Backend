@@ -1,7 +1,16 @@
 <!DOCTYPE html>
 <html>
-<body>
 
+<body>
+  <script>
+    function formatCurrency(value) {
+      // if (typeof value !== "number") {
+      //   return value;
+      // }
+      var formatter = new Intl.NumberFormat('id', { style: 'currency', currency: 'IDR' })
+      return formatter.format(value);
+    }
+  </script>
   <div class="page-header">
     <h2 style="float: left;">
       <span style="text-decoration: underline;">NOTA PENJUALAN</span>
@@ -9,14 +18,20 @@
     <table cellpadding="0" cellspacing="0" width="100%">
       <tr>
         <td>
-          <b>No. Faktur:</b> <%= NoFaktur%><br>
-          <b>Tanggal:</b> <%= tanggal%> <br>
-          <b>Sales:</b> <%= user%>
+          <b>No. Faktur:</b>
+          <%= NoFaktur%><br>
+            <b>Tanggal:</b>
+            <%= tanggal%> <br>
+              <b>Sales:</b>
+              <%= user%>
         </td>
         <td colspan="4">
-          <b>Toko: </b>  <%= tokoName%><br>
-          <b>Telp: </b>  <%= noTelp%><br>
-          <b>Alamat: </b> <%= address%>
+          <b>Toko: </b>
+          <%= tokoName%><br>
+            <b>Telp: </b>
+            <%= noTelp%><br>
+              <b>Alamat: </b>
+              <%= address%>
         </td>
       </tr>
     </table>
@@ -30,10 +45,10 @@
           <p>______________________</p>
         </td>
         <td colspan="4">
-          <td>
-            <b>Penjual</b><br><br><br>
-            <p>______________________</p>
-          </td>
+        <td>
+          <b>Penjual</b><br><br><br>
+          <p>______________________</p>
+        </td>
         </td>
       </tr>
     </table>
@@ -51,44 +66,45 @@
       <tbody>
         <div class="page">
           <tr class="heading">
-              <td>
-                Qty
-              </td>
-              <td>
-                Nama Barang
-              </td>
-              <td>
-                Harga
-              </td>
-              <td>
-                Total
-              </td>
+            <td>
+              Qty
+            </td>
+            <td>
+              Nama Barang
+            </td>
+            <td>
+              Harga
+            </td>
+            <td>
+              Total
+            </td>
           </tr>
           <% for(var t in transaction) { %>
             <tr class="item">
               <td>
-                <%=  transaction[t].qty %>
+                <%= transaction[t].qty %>
               </td>
               <td>
-                <%=  transaction[t].name %>
+                <%= transaction[t].name %>
               </td>
               <td>
-                Rp. <%=   transaction[t].sellingPrice %>
+                
+                <%= transaction[t].sellingPrice %>
               </td>
               <td>
-                Rp. <%=   transaction[t].totalPriceQty %>
+                <%= transaction[t].totalPriceQty %>
               </td>
             </tr>
-          <% } %>
+            <% } %>
 
-          <tr class="item" style="background-color:LightGray">
-          
-            <td colspan="3" style="border-bottom: 2px solid rgb(123, 123, 143)">
-            </td>
-            <td style="border-bottom: 2px solid rgb(123, 123, 143);text-align: left;">
-              Rp. <%= totalPrice %>
-            </td>
-          </tr>
+              <tr class="item" style="background-color:LightGray">
+
+                <td colspan="3" style="border-bottom: 2px solid rgb(123, 123, 143)">
+                </td>
+                <td style="border-bottom: 2px solid rgb(123, 123, 143);text-align: left;">
+                  Rp. <%= totalPrice %>
+                </td>
+              </tr>
         </div>
       </tbody>
       <tfoot>
@@ -102,31 +118,21 @@
     </table>
   </div>
 </body>
+
 </html>
 <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script> -->
-<script>
-  // https://plnkr.co/edit/lWk6Yd?preview
-  // https://bootsnipp.com/snippets/8MPnQ
-  // https://stackoverflow.com/questions/1360869/how-to-use-html-to-print-header-and-footer-on-every-printed-page-of-a-document
-  // https://medium.com/@Idan_Co/the-ultimate-print-html-template-with-header-footer-568f415f6d2a
-  // $(document).ready(function () {
-  //   window.print();
-  // });
 
-  // margin_page
-  // top:0.07"
-  // right:0.15"
-  // bottom:0.24"
-  // left:0.14"
-</script>
+
 <style>
   /* Styles go here */
 
-  .page-header, .page-header-space {
+  .page-header,
+  .page-header-space {
     height: 110px;
   }
 
-  .page-footer, .page-footer-space {
+  .page-footer,
+  .page-footer-space {
     height: 90px;
   }
 
@@ -227,10 +233,16 @@
   @page {
     margin: 8mm
   }
-  
+
   @media print {
-    thead {display: table-header-group;} 
-    tfoot {display: table-footer-group;}
+    thead {
+      display: table-header-group;
+    }
+
+    tfoot {
+      display: table-footer-group;
+    }
+
     body {
       margin: 0;
       width: 241.3mm;

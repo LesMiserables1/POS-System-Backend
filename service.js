@@ -3,7 +3,7 @@ var Service = nowin.Service;
 
 // Create a new service object
 var svc = new Service({
-  name:'POS backend',
+  name:'POS BACKEND',
   description: 'POS BACKEND.',
   script: `D:\\POS-System-Backend\\index.js`
 });
